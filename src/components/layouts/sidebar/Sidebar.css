@@ -1,0 +1,70 @@
+.sider {
+    background-color: #ffff !important;
+    position: fixed; /* Pour garder la sidebar fixée à gauche */
+    top: 70px; /* Décale la sidebar sous la navbar */
+    left: 0; /* Assure que la sidebar commence à gauche */
+    height: calc(100vh - 70px); /* Prend toute la hauteur de l'écran moins la hauteur de la navbar */
+    width: 250px; /* Largeur fixe pour la sidebar, ajustable selon tes besoins */
+    z-index: 1000; /* Pour s'assurer que la sidebar soit au-dessus des autres éléments */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Optionnel, pour ajouter une ombre à gauche */
+    overflow-y: auto; /* Pour faire défiler le contenu si nécessaire */
+  }
+  
+  .sider--arrow {
+    position: absolute;
+    right: 13px;
+    top: 13px;
+    cursor: pointer;
+  }
+  
+  .sider--arrow.isClosed {
+    right: 0;
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg);
+  }
+  
+  .menu {
+    position: relative;
+    top: 40px;
+  
+  }
+  
+  .menu .ant-menu-item {
+    width: 100%;
+    margin-inline: 0;
+    font-weight: bold; /
+  }
+  
+  .menu .ant-menu-item .ant-menu-title-content {
+    color: #000;
+    font-weight: 400;
+  }
+  
+  .menu .ant-menu-item-active {
+    background-color: #0a91d1 !important; /* Remplace $grey-color-2 par la couleur souhaitée */
+  }
+  
+  .menu .ant-menu-item-selected {
+    background: #e0e0e0; /* Remplace $grey-color par la couleur souhaitée */
+    position: relative;
+
+  }
+  
+  .menu .ant-menu-item-selected .ant-menu-title-content {
+    font-weight: 700;
+  }
+  
+  .menu .ant-menu-item-selected::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: #1890ff;
+    font-weight: bold; / /* Remplace $primary-color par la couleur souhaitée */
+  }
+  
+  .ant-layout-sider-trigger {
+    display: none;
+  }
+  

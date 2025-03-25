@@ -1,0 +1,25 @@
+import { Avatar, Col, Layout, Popover, Row, Space, Typography } from "antd";
+import LogoIsamm from "../../../assets/isamm.png"; // Assure-toi que le chemin est correct
+import { UserOutlined } from "@ant-design/icons";
+import "./Navbar.css";
+
+export const Navbar = () => {
+  return (
+    <Layout.Header className="navbar">
+      <Row align="middle" className="navbar__logo">
+        <Col>
+          <img src={LogoIsamm} alt="orange-logo" className="orange-logo" />
+        </Col>
+        <Col className="navbar__text-logo">
+          <span className="cl-1">Isamm</span>
+          <span className="cl-wh">Engineers Platform</span>
+        </Col>
+      </Row>
+      <div className="navbar__user">
+        
+          <Avatar className="navbar__avatar" icon={<UserOutlined />} />
+       
+      </div>
+    </Layout.Header>
+  );
+};

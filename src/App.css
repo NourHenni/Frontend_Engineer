@@ -1,0 +1,13 @@
+body {
+  background-color: #f0f0f0; /* Gris clair */
+  margin: 0; /* Enlève les marges par défaut */
+  padding: 0; /* Enlève les paddings par défaut */
+}
+
+.main-content {
+  margin-left: 250px; /* Décale le contenu pour ne pas être sous la sidebar */
+  padding: 20px; /* Un peu de padding pour le contenu */
+  background-color: #f0f0f0; /* Gris clair */
+  height: calc(100vh - 70px); /* Hauteur du contenu, sans prendre en compte la navbar */
+  overflow-y: auto; /* Permet de défiler si le contenu est trop grand */
+}

@@ -1,0 +1,59 @@
+.navbar {
+    position: fixed; /* Fixe la navbar en haut */
+    top: 0;
+    left: 0;
+    width: 100%; /* Occupe toute la largeur */
+    height: 70px; /* Ajuste la hauteur */
+    background-color: #0a91d1; /* Fond noir */
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 1000; 
+    justify-content: space-between;
+}
+
+/* Contenu centré dans la navbar */
+.navbar__content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    
+}
+
+/* Logo */
+.navbar__logo img {
+    height: 70px;
+    padding: 10px 20px;
+    display: block; /* Évite les espaces indésirables */
+}
+
+
+/* Texte à côté du logo */
+.navbar__text-logo {
+    font-size: 22px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.cl-1 {
+    color: #101ae2; /* Orange */
+    margin-right: 5px;
+}
+
+.cl-wh {
+    color: #fff;
+}
+
+/* Zone utilisateur */
+.navbar__user {
+    display: flex;
+    align-items: center;
+    margin-right: 30px
+}
+
+/* Avatar utilisateur */
+.navbar__avatar {
+    background-color: #101ae2 ;
+    cursor: pointer;
+}
