@@ -1,21 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Navbar } from './components/layouts/navbar/Navbar'
-import { SidebarLayout } from './components/layouts/sidebar/Sidebar'
-//import { Sidebar } from './components/layouts/sidebar/Sidebar'
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+import Navbar from './components/navbar/Navbar';
+import SidebarLayout from './components/sidebar/Sidebar';
+import FormModal from './components/modals/FormModal';
+import TableData from './components/table/TableData';
+import ButtonModel from './components/button/Button';
+
+// import { Sidebar } from './components/layouts/sidebar/Sidebar';
+
 function App() {
- 
   return (
-    
-      <div>
-       <Navbar /> 
-       <SidebarLayout />
-      </div>
+    <>
+      <Navbar />
+      <ButtonModel />
+      <SidebarLayout />
+      <FormModal />
+        <TableData />
       
-   
-  )
+    </>
+  );
 }
 
-export default App
+export default App;

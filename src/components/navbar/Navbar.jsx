@@ -1,9 +1,9 @@
-import { Avatar, Col, Layout, Popover, Row, Space, Typography } from "antd";
-import LogoIsamm from "../../../assets/isamm.png"; // Assure-toi que le chemin est correct
+import { Avatar, Col, Layout, Row,  } from "antd";
+import LogoIsamm from "../../assets/images/isamm.png"; // Assure-toi que le chemin est correct
 import { UserOutlined } from "@ant-design/icons";
 import "./Navbar.css";
 
-export const Navbar = () => {
+function  Navbar ()  {
   return (
     <Layout.Header className="navbar">
       <Row align="middle" className="navbar__logo">
@@ -23,3 +23,4 @@ export const Navbar = () => {
     </Layout.Header>
   );
 };
+export default Navbar;

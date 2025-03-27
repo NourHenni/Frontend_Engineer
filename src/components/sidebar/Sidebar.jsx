@@ -1,12 +1,12 @@
 import { Menu } from "antd";
-import Sider from "antd/es/layout/Sider";  // Import correct de Sider
-import { useState } from "react";  // Import du hook useState
-import ArrowIcon from "../../../assets/arrow.svg";  // Import de l'icône de flèche
+import Sider from "antd/es/layout/Sider";  
+import { useState } from "react";  
+import ArrowIcon from "../../assets/arrow.svg";  
 
-import "./Sidebar.css";  // Import du fichier CSS pour le style
+import "./Sidebar.css";  
 
-export const SidebarLayout = () => {
-  // Définition de l'état collapsed pour gérer l'ouverture/fermeture du sidebar
+function SidebarLayout ()  {
+ 
   const [collapsed, setCollapsed] = useState(false);
 
   // Exemple de données de menu (à personnaliser selon ton besoin)
@@ -40,3 +40,4 @@ export const SidebarLayout = () => {
     </Sider>
   );
 };
+export default SidebarLayout;
