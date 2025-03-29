@@ -1,11 +1,11 @@
 import { Button } from "antd";
 
 import "./Buton.css";
-function ButtonModel({ text, icon }) {
+function ButtonModel({ icon }) {
   return (
     <div className="button-container">
       <Button type="primary" className="button-button" icon={icon}>
-        {text}
+        Ajouter
       </Button>
     </div>
   );

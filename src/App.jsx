@@ -9,7 +9,11 @@ import Pfa from "./pages/pfa/Pfa";
 function App() {
   return (
     <>
-      <Pfa />
+      <Navbar />
+      <SidebarLayout />
+      <ButtonModel />
+      <TableData />
+      <FormModal />
     </>
   );
 }
