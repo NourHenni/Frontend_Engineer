@@ -28,12 +28,15 @@
     top: 40px;
   
   }
-  
-  .menu .ant-menu-item {
-    width: 100%;
-    margin-inline: 0;
-    font-weight: bold; /
-  }
+  .ant-menu-item {
+    color: #ffffff !important; /* Texte blanc */
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    padding-left: 20px !important; 
+    align-items: center;
+    gap: 2px; /* Espacement entre l'icône et le texte */
+}
   
   .menu .ant-menu-item .ant-menu-title-content {
     color: #000;
@@ -44,11 +47,7 @@
     background-color: #0a91d1 !important; /* Remplace $grey-color-2 par la couleur souhaitée */
   }
   
-  .menu .ant-menu-item-selected {
-    background: #e0e0e0; /* Remplace $grey-color par la couleur souhaitée */
-    position: relative;
-
-  }
+  
   
   .menu .ant-menu-item-selected .ant-menu-title-content {
     font-weight: 700;
@@ -68,3 +67,9 @@
     display: none;
   }
   
+  .ant-menu-submenu-title {
+    font-weight: bold;
+    color: #000 !important;
+}
+
+
