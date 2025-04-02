@@ -1,0 +1,56 @@
+/* Matieres.css */
+
+/* Assurer que tout le contenu prend toute la hauteur de l'écran */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  
+  /* Conteneur général de la page */
+  .page-container {
+    display: flex;
+    height: 100%;
+    flex-direction: row;
+  }
+  
+  /* Conteneur pour la navbar et sidebar à gauche */
+  .sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 250px; /* Largeur fixe pour la sidebar */
+    background-color: #f0f0f0; /* Couleur de fond de la sidebar */
+  }
+  
+  /* Conteneur principal pour le contenu central */
+  .content-container {
+    flex-grow: 1; /* Prendre toute la largeur restante */
+    padding: 20px;
+    display: flex;
+    justify-content: center; /* Centrer horizontalement */
+    align-items: center; /* Centrer verticalement */
+  }
+  
+  /* Conteneur de la table */
+  .table-container {
+    width: 100%;
+    max-width: 1200px; /* Limite la largeur maximale du tableau */
+    margin-top: 20px;
+  }
+  
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .table-header h2 {
+    margin: 0;
+  }
+  
+  /* Optionnel: Ajouter un peu de marge à gauche pour le tableau */
+  .table-container {
+    margin-left: 20px;
+  }
+    

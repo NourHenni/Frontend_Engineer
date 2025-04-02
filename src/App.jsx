@@ -1,4 +1,5 @@
 import "./App.css";
+import Matiers from "../src/pages/matieres/Matieres";
 import Navbar from "./components/navbar/Navbar";
 import SidebarLayout from "./components/sidebar/Sidebar";
 import FormModal from "./components/modals/FormModal";
@@ -8,13 +9,14 @@ import Pfa from "./pages/pfa/Pfa";
 
 function App() {
   return (
-    <>
+   /* <>
       <Navbar />
       <SidebarLayout />
       <ButtonModel />
       <TableData />
       <FormModal />
-    </>
+    </>*/
+    <Matiers/>
   );
 }
 
