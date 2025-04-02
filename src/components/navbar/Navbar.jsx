@@ -41,5 +41,4 @@ function Navbar() {
     </Layout.Header>
   );
 }
-
 export default Navbar;
