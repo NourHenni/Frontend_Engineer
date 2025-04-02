@@ -1,0 +1,31 @@
+/* Container de la modale */
+.modal-container {
+  display: flex;
+  justify-content: center; /* Centre horizontalement */
+  align-items: flex-start; /* Aligne le contenu en haut */
+  height: 100vh; /* Prend toute la hauteur de la page */
+  width: 100vw; /* Prend toute la largeur de la page */
+  position: fixed; /* Permet de s'assurer qu'il couvre bien toute la page */
+  top: 0;
+  left: 0;
+  padding-top: 100px; /* Ajoute un peu d'espace au-dessus, ajustez en fonction de votre layout */
+}
+
+/* Optionnel : pour la modale elle-même, vous pouvez lui donner une taille et un fond */
+.modal-content {
+  width: 60%; /* Largeur de la modale */
+  max-width: 800px; /* Taille maximale */
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ombre autour de la modale */
+}
+
+.modal-button{
+  background-color: #0a91d1;
+}
+  
+  .modal-button:hover {
+    background-color: #0a91d1; /* Effet au survol */
+  }
+  
