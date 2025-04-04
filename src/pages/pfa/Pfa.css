@@ -3,9 +3,9 @@
     position: relative;
     top: 50px;
     width: 100%; /* Ajuste à la largeur disponible */
-    max-width: 1000px; /* Permet d'étendre si besoin */
+     /* Permet d'étendre si besoin */
     margin-left: 280px;
-    padding: 15px 30px 16px 10px;
+    padding: 15px 10px 16px 10px;
     background: #fff;
     border: 1px solid #ccc;
     overflow: hidden; /* Empêche le scroll */
