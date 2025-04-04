@@ -3,8 +3,8 @@ import { Form, Input, Button, Checkbox, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import './LoginPage.css';
-import LogoIsamm from '../../../assets/images/isamm.png';
+import "./LoginPage.css";
+import LogoIsamm from "../../../assets/images/isamm.png";
 
 const LoginPage = () => {
   const [loading, setLoading] = useState(false);
@@ -12,30 +12,19 @@ const LoginPage = () => {
 
   // Handle form submission
   const onFinish = async (values) => {
-    setLoading(true);
-    console.log("Received values:", values);
-
-    const loginData = {
-      cin: values.email,
-      password: values.password,
-    };
-
     try {
-      const response = await axios.post("http://localhost:5000/auth/login", loginData);
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        cin: values.email,
+        password: values.password,
+      });
 
       if (response.status === 200) {
-        const { token } = response.data;
-        localStorage.setItem("token", token);
-        message.success("Login Successful");
-        navigate("/home");
-      } else {
-        message.error("Login failed. Please try again.");
+        localStorage.setItem("token", response.data.token);
+        // Forcez un re-render de l'application
+        window.location.href = "/home"; // Solution temporaire
       }
     } catch (error) {
-      console.error("Error during login:", error);
-      message.error("An error occurred during login. Please try again.");
-    } finally {
-      setLoading(false);
+      message.error("Identifiants incorrects");
     }
   };
 
@@ -46,7 +35,12 @@ const LoginPage = () => {
           <img src={LogoIsamm} alt="isamm-logo" className="login-logo" />
         </div>
         <h2>Login</h2>
-        <Form name="login" onFinish={onFinish} initialValues={{ remember: true }} autoComplete="off">
+        <Form
+          name="login"
+          onFinish={onFinish}
+          initialValues={{ remember: true }}
+          autoComplete="off"
+        >
           <Form.Item
             name="email"
             rules={[{ required: true, message: "Please input your CIN!" }]}

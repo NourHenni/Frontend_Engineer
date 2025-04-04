@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../components/navbar/Navbar";
 import SidebarLayout from "../../components/sidebar/Sidebar";
 import TableData from "../../components/table/TableData";
@@ -6,34 +6,67 @@ import { Space } from "antd";
 import moment from "moment";
 import ButtonModel from "../../components/button/Button";
 import { PlusOutlined } from "@ant-design/icons";
-import "./Pfa.css"; // On garde le CSS
+import "./Pfa.css";
+import AddPeriod from "./addPeriod/AddPeriod";
+import { useNavigate } from "react-router-dom";
+import { fetchPeriod } from "../../services/pfaServices"; // Import de la fonction pour récupérer les périodes
 
 function Pfa() {
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [periods, setPeriods] = useState([]); // Stocke les périodes récupérées depuis l'API
+
+  // Charger les périodes au montage du composant
+  useEffect(() => {
+    const loadPeriods = async () => {
+      const data = await fetchPeriod();
+      setPeriods(data); // Mettre à jour l'état avec les données récupérées
+      console.log(periods);
+    };
+
+    loadPeriods();
+  }, []);
+
+  const refreshData = async () => {
+    const data = await fetchPeriod();
+    setPeriods(data); // Mettre à jour l'état avec les données récupérées
+  };
+
+  // Ouvrir le modal
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Navigation
+  const handleNavigate = () => {
+    navigate("/listePfas");
+  };
+
+  // Colonnes de la table
   const columns = [
     {
       title: "Nom de la période",
-      dataIndex: "name",
+      dataIndex: "Nom",
       key: "name",
       render: (text) => <a>{text}</a>,
     },
     {
-      title: "Période de pfa",
-      dataIndex: "Period",
+      title: "Période de PFA",
       key: "Period",
       render: (_, record) => {
-        let startDate = moment(record.start_date).format("DD/MM/YYYY");
-        let endDate = moment(record.end_date).format("DD/MM/YYYY");
+        let startDate = moment(record.Date_Debut_depot).format("DD/MM/YYYY");
+        let endDate = moment(record.Date_Fin_depot).format("DD/MM/YYYY");
 
         return (
           <span>
-            du {startDate} à {endDate}
+            du {startDate} au {endDate}
           </span>
         );
       },
     },
     {
       title: "Type",
-      dataIndex: "Type",
+      dataIndex: "type",
       key: "type",
     },
     {
@@ -42,33 +75,9 @@ function Pfa() {
       render: (_, record) => (
         <Space size="middle">
           <a>Modifier la période {record.name}</a>
-          <a>Consulter les sujets PFAs</a>
+          <a onClick={handleNavigate}>Consulter les sujets PFAs</a>
         </Space>
       ),
-    },
-  ];
-
-  const data = [
-    {
-      key: "1",
-      name: "Apple",
-      category: "Fruit",
-      price: "$1.00",
-      stock: "In Stock",
-    },
-    {
-      key: "2",
-      name: "Laptop",
-      category: "Electronics",
-      price: "$1000.00",
-      stock: "Out of Stock",
-    },
-    {
-      key: "3",
-      name: "Shirt",
-      category: "Clothing",
-      price: "$20.00",
-      stock: "In Stock",
     },
   ];
 
@@ -76,18 +85,27 @@ function Pfa() {
     <div>
       <Navbar />
       <SidebarLayout />
-
-      {/* Conteneur général de la table */}
       <div className="table-container">
-        {/* Conteneur du titre et du bouton */}
         <div className="table-header">
           <h2>Liste des périodes</h2>
-          <ButtonModel text="Ajouter une session" icon={<PlusOutlined />} />
+          <ButtonModel
+            onClick={showModal}
+            text="Ajouter une période"
+            icon={<PlusOutlined />}
+          />
         </div>
-
-        {/* Tableau */}
-        <TableData columns={columns} data={data} />
+        {/* Utilisation des périodes récupérées au lieu des données statiques */}
+        <TableData columns={columns} data={periods} />
       </div>
+
+      {
+        <AddPeriod
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          title={"Ajouter une période"}
+          refreshData={refreshData}
+        />
+      }
     </div>
   );
 }
