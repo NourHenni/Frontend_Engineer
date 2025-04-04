@@ -1,0 +1,76 @@
+/* src/components/LoginPage.css */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100%; /* Ensure body fills the full height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f2f5; /* Light gray background */
+  }
+  
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%; /* Ensure full viewport height */
+  }
+  
+  .login-form-container {
+    width: 100%;
+    max-width: 400px; /* Maximum width for the login form */
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow around form */
+    text-align: center; /* Center text inside the form */
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+  
+  a {
+    font-size: 12px;
+    color: #1890ff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .login-form-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px; /* Space between the logo and the form */
+  }
+  
+  .login-logo {
+    width: 100px; /* Adjust the size of the logo */
+    height: auto;
+  }
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
