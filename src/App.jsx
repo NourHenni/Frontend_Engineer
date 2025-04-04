@@ -1,5 +1,4 @@
 import "./App.css";
-import Matieres from "./pages/matieres/Matieres";
 import React, { createContext, useEffect, useState } from "react";
 import {
   BrowserRouter as Router,

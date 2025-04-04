@@ -6,7 +6,7 @@ import ButtonModel from "../../components/button/Button";
 import TableData from "../../components/table/TableData";
 import { Space } from "antd";
 import { PlusOutlined , EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
-import "./matieres.css";
+import "./Matieres.css";
 
 function Matieres({ userRole }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
