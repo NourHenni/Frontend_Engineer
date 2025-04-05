@@ -5,7 +5,7 @@ body {
 }
 
 .main-content {
-  margin-left: 250px; /* Décale le contenu pour ne pas être sous la sidebar */
+   /* Décale le contenu pour ne pas être sous la sidebar */
   padding: 20px; /* Un peu de padding pour le contenu */
   background-color: #f0f0f0; /* Gris clair */
   height: calc(100vh - 70px); /* Hauteur du contenu, sans prendre en compte la navbar */
