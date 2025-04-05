@@ -1,0 +1,30 @@
+.users-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .sidebar-open .main-content {
+    margin-left: 250px; /* Same width as your sidebar when open */
+  }
+  
+  .sidebar-closed .main-content {
+    margin-left: 80px; /* Adjust this width for the collapsed sidebar */
+  }
+  
+  .main-content {
+    margin-top: 50px;
+    flex-grow: 1;
+    padding: 20px;
+    transition: margin-left 0.3s ease; /* Smooth transition when toggling */
+  }
+  
+  /* Optional: Style for the content area */
+  .main-content h1 {
+    margin-bottom: 10px;
+  }
+  
+  .main-content p {
+    margin-bottom: 20px;
+  }
+  

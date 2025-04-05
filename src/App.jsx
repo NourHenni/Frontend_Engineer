@@ -6,6 +6,8 @@ import Matieres from "./pages/Matieres/Matieres" ;
 import Pfa from "./pages/Pfa/Pfa" ;
 import StageEte from "./pages/StageEte/StageEte";
 import Users from "./pages/Users/Users"
+import StudentDetails from "./pages/Users/StudentDetails"
+import TeachersDetails from "./pages/Users/TeachersDetails"
 
 import HomePage from "./pages/Home/HomePage"; // Make sure you create this HomePage component
 import ProtectedRoute from "./pages/ProtectedRoute";
@@ -23,6 +25,8 @@ function App() {
         <Route path="/home/StageEte" element={<ProtectedRoute><StageEte /></ProtectedRoute>} />
         <Route path="/home/Competences" element={<ProtectedRoute><Competences /></ProtectedRoute>} />
         <Route path="/home/Users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+        <Route path="/student/:id" element={<StudentDetails />} />
+        <Route path="/teacher/:id" element={<TeachersDetails />} />
 
       </Routes>
     </Router>

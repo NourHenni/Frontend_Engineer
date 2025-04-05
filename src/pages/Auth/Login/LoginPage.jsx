@@ -33,7 +33,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Error during login:", error);
-      message.error("An error occurred during login. Please try again.");
+      message.error("CIN ou Password incorrecte");
     } finally {
       setLoading(false);
     }
