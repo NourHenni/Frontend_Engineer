@@ -1,11 +1,13 @@
 /* Conteneur du bouton */
 .button-container {
     display: flex;
-    justify-content: center; /* Centrer le bouton */
-    align-items: center; /* Centrer verticalement */
+    justify-content: flex-end; /* Aligner les boutons à droite */
+    align-items: center;
     margin-top: 20px;
-    margin-left: 200px;/* Espacement du bouton par rapport aux autres éléments */
+    gap: 10px; /* Espacement uniforme entre les boutons */
 }
+
+
 
 .button-button {
     cursor: pointer; /* Ajoutez cette règle */

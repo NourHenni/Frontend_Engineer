@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu } from "antd";
 import Sider from "antd/es/layout/Sider";
-import { Link } from "react-router-dom"; // Importing Link for routing
+import { Link, useLocation } from "react-router-dom"; // Importing Link for routing
 import ArrowIcon from "../../assets/arrow.svg";
 import competence from "../../assets/icons/strategy.png";
 import groupIcon from "../../assets/icons/group.png";
@@ -66,14 +66,14 @@ function SidebarLayout({ collapsed, setCollapsed }) {
     {
       label: "Matières",
       key: "matieres",
-      icon: <img src={matiere} style={{ width: 25, height: 25 }} />,
+      icon: <img src={matiere} style={{ width: 30, height: 30 }} />,
       route: "/home/Matieres",
       requiredRoles: ["admin", "enseignant", "etudiant"], 
     },
     {
       label: "Compétences",
       key: "competences",
-      icon: <img src={competence} style={{ width: 25, height: 25 }} />,
+      icon: <img src={competence} style={{ width: 30, height: 30 }} />,
       route: "/home/Competences",
       requiredRoles: ["admin", "enseignant", "etudiant"],
     },

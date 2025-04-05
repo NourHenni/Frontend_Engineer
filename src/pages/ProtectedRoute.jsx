@@ -1,15 +1,17 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
+import React, { useContext } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { UserContext } from "../App";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
+  //const location = useLocation();
+  const user = useContext(UserContext);
 
-  if (!token) {
-    // If there is no token, redirect to the login page
+  if (!token || !user) {
     return <Navigate to="/" />;
   }
 
-  return children; // If there's a token, render the children (HomePage)
+  return children;
 };
 
 export default ProtectedRoute;

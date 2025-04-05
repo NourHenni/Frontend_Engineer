@@ -1,0 +1,46 @@
+.sujet-modal .ant-modal-content {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  
+  .sujet-modal .ant-modal-header {
+    background-color: #0a91d1;
+    color: white;
+    width: 150px;
+    padding-left: 5px;
+    border-radius: 10px ;
+  }
+  
+  .sujet-modal .ant-modal-title {
+    color: white;
+    font-size: 18px;
+  }
+  
+  .sujet-modal .sujet-details {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  .sujet-modal .sujet-details p {
+    margin: 8px 0;
+  }
+  
+  .sujet-modal .sujet-details strong {
+    color: #333;
+  }
+
+  .filter-select{
+    font-weight: 400;
+    width: 170px !important;
+
+    .ant-select-selection-placeholder{
+      color: primary-color;
+    }
+    .anticon{
+      svg{
+        color: primary-color;
+      }
+    }
+  }
+  
