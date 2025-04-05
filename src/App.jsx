@@ -18,7 +18,9 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 import "./App.css";
 import { fetchUserInfo } from "./services/authServices";
 import Pfa from "./pages/pfa/Pfa";
-
+import ListePfa from "./pages/pfa/listePfas/ListePfa"
+import StudentDetails from "./pages/Users/StudentDetails";
+import TeachersDetails from "./pages/Users/TeachersDetails";
 export const UserContext = createContext();
 
 function App() {
