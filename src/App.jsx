@@ -8,7 +8,7 @@ import {
 import LoginPage from "./pages/Auth/Login/LoginPage";
 import Competences from "./pages/competences/Competences";
 import Matieres from "./pages/matieres/Matieres";
-import Pfa from "./pages/pfa/Pfa";
+
 import StageEte from "./pages/stageEte/StageEte";
 import Users from "./pages/Users/Users";
 import { Spin } from "antd";
@@ -17,6 +17,7 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 import "./App.css";
 import ListePfa from "./pages/pfa/listePfas/ListePfa";
 import { fetchUserInfo } from "./services/authServices";
+import Pfa from "./pages/pfa/Pfa";
 
 export const UserContext = createContext();
 
@@ -75,6 +76,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/home/listePfas"
+                element={
+                  <ProtectedRoute>
+                    <ListePfa />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/home/Matieres"
                 element={
@@ -126,7 +136,7 @@ function App() {
                   path="/home/PFA"
                   element={
                     <ProtectedRoute>
-                      <Pfa />
+                      <ListePfa />
                     </ProtectedRoute>
                   }
                 />
@@ -158,7 +168,6 @@ function App() {
             )}
 
           {/* Redirection de secours */}
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </UserContext.Provider>

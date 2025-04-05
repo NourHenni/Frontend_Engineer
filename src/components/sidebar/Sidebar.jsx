@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Menu } from "antd";
 import Sider from "antd/es/layout/Sider";
-import { Link } from "react-router-dom"; // Importing Link for routing
+import { Link, useLocation } from "react-router-dom"; // Importing Link for routing
 import ArrowIcon from "../../assets/arrow.svg";
 import competence from "../../assets/icons/strategy.png";
 import groupIcon from "../../assets/icons/group.png";
@@ -12,13 +12,13 @@ import "./Sidebar.css";
 
 function SidebarLayout() {
   const [collapsed, setCollapsed] = useState(false);
-
+  const location = useLocation();
   // Define the menu items for the Sidebar
   const MenuItems = [
     {
       label: "Comptes",
       key: "users",
-      icon: <img src={groupIcon} style={{ width: 25, height: 25 }} />,
+      icon: <img src={groupIcon} style={{ width: 30, height: 30 }} />,
       route: "/home/Users", // Update the route to match your App.jsx
     },
     {
@@ -36,19 +36,19 @@ function SidebarLayout() {
     {
       label: "Matières",
       key: "matieres",
-      icon: <img src={matiere} style={{ width: 25, height: 25 }} />,
+      icon: <img src={matiere} style={{ width: 30, height: 30 }} />,
       route: "/home/Matieres",
     },
     {
       label: "Compétences",
       key: "competences",
-      icon: <img src={competence} style={{ width: 25, height: 25 }} />,
+      icon: <img src={competence} style={{ width: 30, height: 30 }} />,
       route: "/home/Competences",
     },
   ];
 
   return (
-    <Sider width={250} className="sider" collapsed={collapsed} collapsible>
+    <Sider width={200} className="sider" collapsed={collapsed} collapsible>
       {/* Arrow button to collapse/expand the sidebar */}
       <img
         src={ArrowIcon}
@@ -58,10 +58,13 @@ function SidebarLayout() {
       />
 
       {/* Sidebar Menu */}
-      <Menu mode="inline" className="menu">
+      <Menu
+        mode="inline"
+        className="menu"
+        selectedKeys={[location.pathname]} // Met la clé sélectionnée
+      >
         {MenuItems.map((item) => (
-          <Menu.Item key={item.key} icon={item.icon}>
-            {/* Link component for routing */}
+          <Menu.Item key={item.route} icon={item.icon}>
             <Link to={item.route}>{item.label}</Link>
           </Menu.Item>
         ))}
