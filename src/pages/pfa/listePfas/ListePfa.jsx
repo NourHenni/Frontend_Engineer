@@ -12,7 +12,17 @@ import {
   EyeInvisibleFilled,
   EyeInvisibleOutlined,
 } from "@ant-design/icons";
-import { Space, Dropdown, Menu, Modal, message, Select, Spin } from "antd";
+import {
+  Space,
+  Dropdown,
+  Menu,
+  Modal,
+  message,
+  Select,
+  Spin,
+  Alert,
+  Table,
+} from "antd";
 import "./ListePfa.css";
 import AddPeriod from "../addPeriod/AddPeriod";
 import AddPfa from "../addPFA/AddPfa";
@@ -20,39 +30,175 @@ import ChoicePfa from "../choicePFA/ChoicePfa";
 import PfaSelectionForm from "../choicePFA/ChoicePfa";
 import { UserContext } from "../../../App";
 import {
+  fetchMyPfas,
   fetchPfas,
+  fetchPublishedPfas,
   maqsuedPfas,
   sendEmail,
 } from "../../../services/pfaServices";
 import axios from "axios";
+import UpdatePfa from "../updatePfa/UpdatePfa";
+import ChoicesModal from "../choicesModel/ChoiceModel";
+import ChoiceStudents from "../choices/ChoicesStudent";
 
 function ListePfa() {
   const user = useContext(UserContext);
   const [dataPfas, setDataPfas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedSujet, setSelectedSujet] = useState(null);
   const [limit, setLimit] = useState(4); // 👈 4 éléments par page
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModifying, setIsModifying] = useState(false);
+  const [isConsulting, setIsConsulting] = useState(false);
+  const [infoPeriod, setInfoPeriod] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [sortByTeacher, setSortByTeacher] = useState(false);
+  const [selectedTechnology, setSelectedTechnology] = useState(""); // Nouveau état pour la technologie sélectionnée
+  const [technologiesList, setTechnologiesList] = useState([]);
 
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    technologies: [],
+    estBinome: "",
+    etudiant1: "",
+    etudiant2: "",
+  });
+
+  const roleToFetcher = {
+    admin: fetchPfas,
+    enseignant: fetchMyPfas,
+    etudiant: fetchPublishedPfas,
+  };
+
+  // Fonction pour charger les données
   useEffect(() => {
-    const loadPfas = async () => {
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const result = await fetchPfas();
-        setDataPfas(result); // Mettre à jour l'état avec les données récupérées
-        console.log("data", result);
-        setLoading(false);
+        const fetcher = roleToFetcher[user.role];
+        if (fetcher) {
+          const result = await fetcher();
+          setDataPfas(result);
+
+          // Extraire les technologies disponibles à partir des données
+          const technologies = [
+            ...new Set(result.flatMap((pfa) => pfa.technologies)),
+          ];
+          setTechnologiesList(technologies);
+          console.log("technologies", technologies);
+        }
       } catch (e) {
+        console.error("Erreur de chargement :", e);
+      } finally {
         setLoading(false);
       }
     };
 
-    loadPfas();
-  }, []);
+    loadData();
+  }, [user.role]); // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
 
   const refreshData = async () => {
     const data = await fetchPfas();
     setDataPfas(data); // Mettre à jour l'état avec les données récupérées
+  };
+  const showModalChoice = () => {
+    setIsModalVisible(true);
+  };
+
+  // Fonction pour filtrer les PFA par technologie
+  const handleTechnologyFilter = (value) => {
+    setSelectedTechnology(value); // Mettre à jour la technologie sélectionnée
+
+    if (value) {
+      const filteredData = dataPfas.filter((pfa) =>
+        pfa.technologies.includes(value)
+      );
+      setDataPfas(filteredData); // Appliquer le filtre
+    } else {
+      // Si aucune technologie n'est sélectionnée, recharger toutes les données
+      loadData();
+    }
+  };
+
+  // Fonction pour gérer la pagination
+  const handlePaginationChangee = (page, pageSize) => {
+    // Mettre à jour la page courante et la taille de la page (implémenter votre logique de pagination)
+  };
+
+  // Fonction pour fermer le modal
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+  const refreshMyData = async () => {
+    const data = await fetchMyPfas();
+    setDataPfas(data); // Mettre à jour l'état avec les données récupérées
+  };
+
+  const handleShowModal = (record) => {
+    setSelectedRecord(record);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedRecord(null);
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const fetcher = roleToFetcher[user.role];
+        if (fetcher) {
+          const result = await fetcher();
+          // Tri par enseignant si nécessaire
+          if (sortByTeacher) {
+            result.sort((a, b) => {
+              // Trie alphabétique par le nom de l'enseignant (assumes `enseignant.nom` et `enseignant.prenom` sont disponibles)
+              const nameA = `${a.enseignant.nom} ${a.enseignant.prenom}`;
+              const nameB = `${b.enseignant.nom} ${b.enseignant.prenom}`;
+              return nameA.localeCompare(nameB);
+            });
+          }
+          setDataPfas(result);
+        }
+      } catch (e) {
+        console.error("Erreur de chargement :", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user.role, sortByTeacher]); // Ajoute sortByTeacher dans le tableau de dépendances pour déclencher le rechargement
+
+  const onUpdatePfa = (info) => {
+    setIsUpdateModalOpen(true);
+    setIsConsulting(false);
+    setIsModifying(true);
+    setInfoPeriod(info);
+
+    // Chercher le sujet  à modifier dans la liste des périodes
+    const pfasdata = dataPfas.find((pfa) => pfa.id === info.id);
+    console.log("pfasdata", pfasdata);
+    if (pfasdata) {
+      // Pré-remplir les champs du formulaire de mise à jour
+      setFormData({
+        titreSujet: pfasdata.titreSujet || "",
+        description: pfasdata.description || "",
+        technologies: pfasdata.technologies || [],
+        estBinome: pfasdata.estBinome || "oui",
+        etudiant1: pfasdata.etudiant1 || "",
+        etudiant2: pfasdata.etudiant2 || "",
+      });
+    } else {
+      console.error("pfa non trouvée");
+    }
   };
 
   const handlePaginationChange = (page, pageSize) => {
@@ -167,42 +313,66 @@ function ListePfa() {
 
   const onDeleteSujet = (record) => {
     Modal.confirm({
-      title: "Voulez-vous supprimer ce sujet?",
+      title: "Voulez-vous supprimer ce sujet ?",
       icon: <ExclamationCircleFilled />,
       cancelText: "Annuler",
       okText: "Oui",
       onOk: () => {
-        // return new Promise((resolve, reject) => {
-        //   axios
-        //     .delete(`/sujet/delete/${record.key}`)
-        //     .then(({ data }) => {
-        //       message.success("Sujet supprimé avec succès");
-        //       setData((prevData) =>
-        //         prevData.filter((item) => item.key !== record.key)
-        //       );
-        //       resolve(data);
-        //     })
-        //     .catch((err) => reject(err));
-        // });
+        return new Promise((resolve, reject) => {
+          // Assurez-vous que le token est bien récupéré du localStorage ou autre source
+          const token = localStorage.getItem("token");
+
+          if (!token) {
+            message.error("Utilisateur non authentifié.");
+            return reject(new Error("Token manquant"));
+          }
+
+          axios
+            .delete(`http://localhost:5000/pfa/${record._id}`, {
+              headers: {
+                Authorization: `Bearer ${token}`, // Inclure le token ici
+              },
+            })
+            .then(({ data }) => {
+              message.success("Sujet supprimé avec succès");
+              setDataPfas((prevData) =>
+                prevData.filter((item) => item._id !== record._id)
+              );
+              resolve(data);
+            })
+            .catch((err) => {
+              message.error("Erreur lors de la suppression du sujet");
+              reject(err);
+            });
+        });
       },
     });
   };
 
   const columns = [
     { title: "Code PFA", dataIndex: "code_pfa", key: "code" },
-    { title: "Titre du sujet", dataIndex: "titreSujet", key: "titre" },
-    { title: "Technologies", dataIndex: "technologies", key: "technologies" },
+    { title: "Titre du sujet", dataIndex: "titreSujet", key: "titreSujet" },
+    {
+      title: "Technologies",
+      dataIndex: "technologies",
+      key: "technologies",
+      render: (technologies) => (
+        <span>
+          {technologies ? technologies.join(", ") : "Aucune technologie"}
+        </span>
+      ),
+    },
     { title: "Description", dataIndex: "description", key: "description" },
     {
       title: "Binome",
       dataIndex: "estBinome",
-      key: "binome",
+      key: "estBinome",
       render: (binome) => (binome ? "Oui" : "Non"),
     },
     {
       title: "Etat Affectation",
       dataIndex: "etatAffectation",
-      key: "etatAffect",
+      key: "etatAffectation",
     },
   ];
 
@@ -239,6 +409,16 @@ function ListePfa() {
       key: "etatDepot",
       render: (text, record) => <EtatDepotDropdown record={record} />,
     });
+    // Ajout d'une action pour ouvrir une nouvelle table avec les choix
+    columns.push({
+      title: "Voir Choix",
+      key: "voirChoix",
+      render: (_, record) => (
+        <Space size="middle">
+          <a onClick={() => handleShowModal(record)}>Voir Choix</a>
+        </Space>
+      ),
+    });
     columns.push({
       title: "Actions",
       key: "action",
@@ -267,7 +447,7 @@ function ListePfa() {
       render: (_, record) => (
         <Space size="middle">
           <a onClick={() => showSujetDetails(record)}>Consulter</a>
-          <a>Modifier le sujet</a>
+          <a onClick={() => onUpdatePfa(record)}>Modifier le sujet</a>
           <a onClick={() => onDeleteSujet(record)}>Supprimer le sujet</a>
         </Space>
       ),
@@ -307,24 +487,53 @@ function ListePfa() {
               icon={<PlusOutlined />}
             />
           )}
-          {user.role === "etudiant" && (
-            <>
-              <Select
-                placeholder="Filtrer par enseignant"
-                allowClear={true}
-                bordered={false}
-                // options={listSpecialities}
-                className="filter-select"
-                //defaultValue={filterSepciality}
-                //onChange={(val) => setFilterSepciality(val)}
+          {user.role === "etudiant" &&
+            (user.niveau === 2 ? (
+              <>
+                <ButtonModel
+                  text={
+                    sortByTeacher
+                      ? "Désactiver le tri par enseignant"
+                      : "Trier par enseignant"
+                  }
+                  onClick={() => setSortByTeacher(!sortByTeacher)}
+                  icon={<DownOutlined />}
+                />
+                <Select
+                  placeholder="Sélectionner une technologie"
+                  style={{ width: 200 }}
+                  onChange={handleTechnologyFilter}
+                  value={selectedTechnology}
+                >
+                  <Select.Option value="">
+                    Toutes les technologies
+                  </Select.Option>
+                  {technologiesList.map((tech, index) => (
+                    <Select.Option key={index} value={tech}>
+                      {tech}
+                    </Select.Option>
+                  ))}
+                </Select>
+
+                <ButtonModel
+                  text="Choisir les sujets Pfas"
+                  onClick={showModal}
+                  icon={<PlusOutlined />}
+                />
+                <ButtonModel
+                  text="Consulter mes choix "
+                  onClick={showModalChoice}
+                  icon={<EyeOutlined />}
+                />
+              </>
+            ) : (
+              <Alert
+                message="Accès refusé"
+                description="Vous n'êtes pas autorisé à choisir un sujet PFA. Seuls les étudiants en 2ème année sont concernés."
+                type="warning"
+                showIcon
               />
-              <ButtonModel
-                text="Choisir les sujets Pfas "
-                onClick={showModal}
-                icon={<PlusOutlined />}
-              />
-            </>
-          )}
+            ))}
         </div>
 
         <TableData
@@ -332,7 +541,9 @@ function ListePfa() {
           data={paginatedData}
           loading={loading}
           pagination={pagination}
-          onPaginationChange={handlePaginationChange} // Passer la fonction pour gérer la pagination
+          onPaginationChange={handlePaginationChange}
+
+          // Passer la fonction pour gérer la pagination
         />
       </div>
       {user.role === "admin" && (
@@ -349,6 +560,7 @@ function ListePfa() {
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           title="Ajouter un sujet PFA"
+          refreshMyData={refreshMyData}
         />
       )}
       {user.role === "etudiant" && (
@@ -356,6 +568,13 @@ function ListePfa() {
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           title="Sélectionner 3 sujets PFA"
+        />
+      )}
+      {user.role === "etudiant" && (
+        <ChoiceStudents
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          title="Mes choix "
         />
       )}
       {/* Modale de consultation du sujet */}
@@ -402,6 +621,25 @@ function ListePfa() {
           </div>
         )}
       </Modal>
+      {/* Modal "Mettre à jour une période" */}
+      {isUpdateModalOpen && (
+        <UpdatePfa
+          isUpdateModalOpen={isUpdateModalOpen}
+          setIsModalOpen={setIsUpdateModalOpen}
+          title={"Mettre à jour un sujet pfa"}
+          formData={formData} // Passer formData au modal
+          setFormData={setFormData} // Passer la fonction setFormData au modal
+          refreshMyData={refreshMyData}
+          dataPfas={dataPfas}
+        />
+      )}
+      {selectedRecord && (
+        <ChoicesModal
+          record={selectedRecord}
+          visible={modalVisible}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }

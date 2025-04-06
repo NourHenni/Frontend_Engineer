@@ -70,7 +70,20 @@ function FormModal({
             >
               {field.type === "input" && <Input />}
               {field.type === "textarea" && <TextArea rows={4} />}
-              {field.type === "checkbox" && <Checkbox>Oui</Checkbox>}
+              {field.type === "checkbox" && (
+                <Form.Item
+                  key={index}
+                  label={field.label}
+                  name={field.name}
+                  valuePropName="checked"
+                  rules={field.rules}
+                  style={field.style}
+                  wrapperCol={field.wrapperCol}
+                >
+                  <Checkbox onChange={field.onchange}>Oui</Checkbox>
+                </Form.Item>
+              )}
+
               {field.type === "radio" && (
                 <Radio.Group>
                   {field.options?.map((option) => (
@@ -98,6 +111,31 @@ function FormModal({
                   addonBefore={field.addonBefore}
                   maxLength={field.inputProps?.maxLength}
                   placeholder={field.inputProps?.placeholder}
+                />
+              )}
+              {field.type === "selectStudents" && (
+                <Select
+                  {...field.selectProps} // Pour passer les props personnalisés comme options, placeholder...
+                  showSearch
+                  optionFilterProp="label"
+                >
+                  {field.selectProps?.options?.map((option) => (
+                    <Select.Option
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                    >
+                      {option.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              )}
+              {field.type === "tags" && (
+                <Select
+                  {...field.selectProps} // Pour passer les props personnalisés comme options, placeholder...
+                  mode="tags"
+                  style={{ width: "100%" }}
+                  tokenSeparators={[","]} // Optionnel: pour séparer les tags par virgules
                 />
               )}
             </Form.Item>
