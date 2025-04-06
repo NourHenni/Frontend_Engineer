@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Menu } from "antd";
+//import { UserContext } from "../../context/UserContext";
 import Sider from "antd/es/layout/Sider";
 import { Link } from "react-router-dom"; // Importing Link for routing
 import ArrowIcon from "../../assets/arrow.svg";
@@ -12,9 +13,11 @@ import "./Sidebar.css";
 
 function SidebarLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useContext(UserContext);
 
   // Define the menu items for the Sidebar
   const MenuItems = [
+    
     {
       label: "Comptes",
       key: "users",
@@ -31,8 +34,15 @@ function SidebarLayout() {
       label: "Stages d'été",
       key: "stageEte",
       icon: <img src={ete} style={{ width: 30, height: 30 }} />,
-      route: "/home/StageEte",
+      route:
+      user.role === "etudiant"
+        ? "/home/StageEte"
+        : user.role === "admin"
+        ? "/home/StagesAdmin"
+        : "/home", // valeur par défaut pour éviter les erreurs
+    
     },
+    
     {
       label: "Matières",
       key: "matieres",

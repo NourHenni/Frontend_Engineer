@@ -1,23 +1,20 @@
-import "./App.css";
 import React, { createContext, useEffect, useState } from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { Spin } from "antd";
+import "./App.css";
+
 import LoginPage from "./pages/Auth/Login/LoginPage";
 import Competences from "./pages/competences/Competences";
 import Matieres from "./pages/matieres/Matieres";
 import Pfa from "./pages/pfa/Pfa";
 import StageEte from "./pages/stageEte/StageEte";
 import Users from "./pages/Users/Users";
-import { Spin } from "antd";
-import HomePage from "./pages/Home/HomePage"; // Make sure you create this HomePage component
+import HomePage from "./pages/Home/HomePage";
 import ProtectedRoute from "./pages/ProtectedRoute";
-import "./App.css";
 import { fetchUserInfo } from "./services/authServices";
+import ListeStages from "./pages/stageEte/ListeStages";
 
+// Contexte global utilisateur
 export const UserContext = createContext();
 
 function App() {
@@ -28,18 +25,22 @@ function App() {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const user = await fetchUserInfo();
-        setUser(user);
-        console.log("user", user.role);
+        const userData = await fetchUserInfo();
+        setUser(userData);
+        console.log("user", userData.role);
       } catch (e) {
         console.error("Erreur de récupération :", e);
       } finally {
         setLoading(false);
       }
     };
-    if (token) fetchMe();
-    else setLoading(false);
-  }, [token]); // Ajoutez token comme dépendance
+
+    if (token) {
+      fetchMe();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
 
   if (loading) {
     return (
@@ -50,7 +51,6 @@ function App() {
   }
 
   return (
-
     <UserContext.Provider value={user}>
       <Router>
         <Routes>
@@ -59,6 +59,62 @@ function App() {
 
           {/* Routes protégées pour admin */}
           {token && user.role === "admin" && (
+            <>
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/PFA"
+                element={
+                  <ProtectedRoute>
+                    <Pfa />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/StagesAdmin"
+                element={
+                  <ProtectedRoute>
+                    <ListeStages />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/Matieres"
+                element={
+                  <ProtectedRoute>
+                    <Matieres />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/home/Competences"
+                element={
+                  <ProtectedRoute>
+                    <Competences />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/Users"
+                element={
+                  <ProtectedRoute>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+              
+            </>
+          )}
+
+          {/* Routes protégées pour enseignants et étudiants */}
+          {token && (user.role === "enseignant" || user.role === "etudiant") && (
             <>
               <Route
                 path="/home"
@@ -100,66 +156,11 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/home/Users"
-                element={
-                  <ProtectedRoute>
-                    <Users />
-                  </ProtectedRoute>
-                }
-              />
             </>
           )}
 
-          {/* Routes protégées pour enseignants et étudiants */}
-          {token &&
-            (user.role === "enseignant" || user.role === "etudiant") && (
-              <>
-                <Route
-                  path="/home"
-                  element={
-                    <ProtectedRoute>
-                      <HomePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/PFA"
-                  element={
-                    <ProtectedRoute>
-                      <Pfa />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/Matieres"
-                  element={
-                    <ProtectedRoute>
-                      <Matieres />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/StageEte"
-                  element={
-                    <ProtectedRoute>
-                      <StageEte />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/Competences"
-                  element={
-                    <ProtectedRoute>
-                      <Competences />
-                    </ProtectedRoute>
-                  }
-                />
-              </>
-            )}
-
-          {/* Redirection de secours */}
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* Redirection fallback */}
+          
         </Routes>
       </Router>
     </UserContext.Provider>
