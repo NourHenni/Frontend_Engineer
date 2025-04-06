@@ -1,365 +1,655 @@
-import React, { useState } from "react";
-import { Modal, Form, Input, InputNumber, Button } from "antd";
-import Navbar from "../../components/navbar/Navbar";
-import SidebarLayout from "../../components/sidebar/Sidebar";
-import ButtonModel from "../../components/button/Button";
-import TableData from "../../components/table/TableData";
-import { Space } from "antd";
-import { PlusOutlined , EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
-import "./Matieres.css";
+import React, { useState, useEffect, useContext } from 'react';
+import { 
+  Button, Input, InputNumber, Table, Space, Modal, Form, message, 
+  Spin, Alert, Tag, Select, Popconfirm, Switch 
+} from 'antd';
+import { 
+  PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined 
+} from '@ant-design/icons';
+import Navbar from '../../components/navbar/Navbar';
+import SidebarLayout from '../../components/sidebar/Sidebar';
+import axios from 'axios';
+import { UserContext } from '../../App';
+import './Matieres.css';
 
-function Matieres({ userRole }) {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedMatiere, setSelectedMatiere] = useState(null);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
-  const [editingMatiere, setEditingMatiere] = useState(null);
-  const [matieres, setMatieres] = useState([
-    {
-      key: "1",
-      name: "Mathématiques",
-      credit: 3,
-      coefficient: 2,
-      isPublished: false,
-    },
-    {
-      key: "2",
-      name: "Physique",
-      credit: 4,
-      coefficient: 3,
-      isPublished: true,
-    },
-    // Ajoutez d'autres matières si nécessaire
-  ]);
+const { Option } = Select;
 
+const Matieres = () => {
+  // Context et états
+  const { role: userRole } = useContext(UserContext) || {};
   const [form] = Form.useForm();
+  const [state, setState] = useState({
+    loading: true,
+    data: [],
+    error: null,
+    searchText: '',
+    showArchived: false,
+    isModalOpen: false,
+    selectedMatiere: null,
+    competences: []
+  });
 
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-  const showAddModal = () => {
-    setIsAddModalVisible(true);
-  };
-  
-  const showDetailsModal = (matiere) => {
-    setSelectedMatiere(matiere);
-    setIsDetailsModalVisible(true);
-  };
-  const handleAddCancel = () => {
-    setIsAddModalVisible(false);
-    form.resetFields();
-  };
-  const showEditModal = (matiere) => {
-    setEditingMatiere(matiere);
-    setIsEditModalVisible(true);
-    form.setFieldsValue(matiere); // Pré-remplit le formulaire avec les données existantes
-  };
-  
-  const handleDetailsCancel = () => {
-    setIsDetailsModalVisible(false);
-    setSelectedMatiere(null);
-  };
-    
-  const handleEditOk = (values) => {
-    const updatedMatieres = matieres.map((matiere) =>
-      matiere.key === editingMatiere.key ? { ...matiere, ...values } : matiere
-    );
-    setMatieres(updatedMatieres);
-    setIsEditModalVisible(false);
-    setEditingMatiere(null);
-    form.resetFields();
-  };
-  const handleEditCancel = () => {
-    setIsEditModalVisible(false);
-    setEditingMatiere(null);
-    form.resetFields();
-  };
-    
-  const togglePublication = (key) => {
-    const updatedMatieres = matieres.map((matiere) =>
-      matiere.key === key ? { ...matiere, isPublished: !matiere.isPublished } : matiere
-    );
-    setMatieres(updatedMatieres);
-  };
-  
+  // Destructuration de l'état
+  const { 
+    loading, data, error, searchText, showArchived, 
+    isModalOpen, selectedMatiere, competences 
+  } = state;
 
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    form.resetFields();
-  };
+  // Chargement initial des données
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem("token");
+      
+      try {
+        const [matieresRes, competencesRes] = await Promise.all([
+          axios.get('http://localhost:5000/matieres', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get('http://localhost:5000/Competences', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
 
-  const handleOk = (values) => {
-    const newMatiere = {
-      key: (matieres.length + 1).toString(),
-      ...values,
+        setState(prev => ({
+          ...prev,
+          data: matieresRes.data.map(item => ({
+            ...item,
+            key: item._id,
+            competences: item.competences || []
+          })),
+          competences: competencesRes.data,
+          loading: false
+        }));
+
+      } catch (err) {
+        setState(prev => ({ ...prev, error: err.message, loading: false }));
+      }
     };
-    setMatieres([...matieres, newMatiere]);
-    setIsModalVisible(false);
-    form.resetFields();
-  };
-  const handleDelete = (key) => {
-    setMatieres(matieres.filter((item) => item.key !== key));
-  };
 
+    fetchData();
+  }, []);
+
+  // Configuration des colonnes du tableau
   const columns = [
     {
-      title: "Nom de la matière",
-      dataIndex: "name",
-      key: "name",
+      title: 'Code',
+      dataIndex: 'CodeMatiere',
+      key: 'CodeMatiere',
     },
- 
     {
-      title: "Actions",
-      key: "action",
-      render: (_, record) => (
-        <Space size="middle">
-           <Button onClick={() => showDetailsModal(record)}>Consulter</Button>
-        
-           {userRole === "admin" && (
-            <>
-           <Button onClick={() => showEditModal(record)}>Modifier</Button>
-          <Button onClick={() => handleDelete(record.key)} danger>
-            Supprimer
-          </Button>
-          <Button onClick={() => togglePublication(record.key)}>
-              {record.isPublished ? "Masquer" : "Publier"}
-            </Button>
-            /</>
-           )}          
-          
-          
-        </Space>
-      ),
+      title: 'Nom',
+      dataIndex: 'Nom',
+      key: 'Nom',
     },
+    {
+      title: 'Statut',
+      key: 'status',
+      render: (_, record) => (
+        <Space>
+          <Tag color={record.publiee ? 'green' : 'volcano'}>
+            {record.publiee ? 'Publiée' : 'Masquée'}
+          </Tag>
+          <Tag color={record.archived ? 'red' : 'blue'}>
+            {record.archived ? 'Archivée' : 'Active'}
+          </Tag>
+        </Space>
+      )
+    },
+    {
+      title: 'Actions',
+      key: 'action',
+      render: (_, record) => (
+        <Space>
+          <Button onClick={() => showDetails(record)}>Consulter</Button>
+          {userRole === 'admin' && (
+            <>
+              <Button onClick={() => handleEdit(record)}>Modifier</Button>
+              <Popconfirm
+                title="Confirmer la suppression ?"
+                onConfirm={() => handleDelete(record)}
+                okText="Oui"
+                cancelText="Non"
+              >
+                <Button danger>Supprimer</Button>
+              </Popconfirm>
+              <Button
+                icon={record.publiee ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
+                onClick={() => togglePublish(record)}
+              >
+                {record.publiee ? 'Masquer' : 'Publier'}
+              </Button>
+            </>
+          )}
+        </Space>
+      )
+    }
   ];
-  
+
+  // Affichage des détails
+  const showDetails = (record) => {
+    const getStatusColor = (status) => ({
+      Terminee: 'green',
+      EnCours: 'blue',
+    }[status] || 'gray');
+
+    const renderCurriculum = () => {
+      if (!record.Curriculum?.length) return <p>Aucun curriculum défini</p>;
+      
+      return record.Curriculum.map((chapitre, index) => (
+        <div key={index} className="curriculum-chapitre">
+          <h4>Chapitre {index + 1}: {chapitre.titreChapitre}</h4>
+          <div className="chapitre-details">
+            <p>Statut: <Tag color={getStatusColor(chapitre.AvancementChap)}>
+              {chapitre.AvancementChap}
+            </Tag></p>
+            
+            <h5>Sections:</h5>
+            <div className="sections-list">
+              {chapitre.sections?.map((section, sIndex) => (
+                <div key={sIndex} className="section-item">
+                  <p><strong>Section {sIndex + 1}: {section.nomSection}</strong></p>
+                  <p>Description: {section.Description}</p>
+                  <p>Statut: <Tag color={getStatusColor(section.AvancementSection)}>
+                    {section.AvancementSection}
+                  </Tag></p>
+                  {section.dateFinSection && (
+                    <p>Date fin: {new Date(section.dateFinSection).toLocaleDateString()}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ));
+    };
+
+    Modal.info({
+      title: `Détails de ${record.Nom}`,
+      width: 800,
+      content: (
+        <div className="matiere-details">
+          <h2>{record.Nom} ({record.CodeMatiere})</h2>
+          <div className="infos-grid">
+            <div><strong>Crédits:</strong> {record.Credit}</div>
+            <div><strong>Volume Horaire:</strong> {record.VolumeHoraire}h</div>
+            <div><strong>Niveau:</strong> {record.Niveau}</div>
+            <div><strong>Semestre:</strong> {record.Semestre}</div>
+          </div>
+
+          <h3>Compétences associées</h3>
+          <ul>
+            {record.competences.map((c, i) => (
+              <li key={i}>{c.nomCompetence}  :  {c.codeCompetence}</li>
+            ))}
+          </ul>
+
+          <h3>Curriculum</h3>
+          <div className="curriculum-container">
+            {renderCurriculum()}
+          </div>
+        </div>
+      )
+    });
+  };
+
+  // Gestion des modifications
+  const handleEdit = (record) => {
+    setState(prev => ({ ...prev, selectedMatiere: record, isModalOpen: true }));
+    form.setFieldsValue({
+      ...record,
+      competences: record.competences?.map(c => c._id),
+      Curriculum: record.Curriculum || [],
+      publiee: record.publiee || false
+    });
+  };
+
+  // Suppression
+  const handleDelete = async (record) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/matieres/${record._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setState(prev => ({
+        ...prev,
+        data: prev.data.filter(item => item._id !== record._id)
+      }));
+      message.success('Matière supprimée avec succès');
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Erreur de suppression');
+    }
+  };
+
+  // Publication/Dépublication
+  const togglePublish = async (record) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `http://localhost:5000/matieres/${record._id}`,
+        { publiee: !record.publiee },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setState(prev => ({
+        ...prev,
+        data: prev.data.map(item => 
+          item._id === record._id ? { ...item, publiee: !item.publiee } : item
+        )
+      }));
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Erreur de publication');
+    }
+  };
+
+  // Soumission du formulaire
+  const handleSubmit = async (values) => {
+    try {
+      const payload = {
+        ...values,
+        CoeffGroupeModule: Number(values.CoeffGroupeModule),
+        Coefficient: Number(values.Coefficient),
+        VolumeHoraire: Number(values.VolumeHoraire),
+        NbHeuresCours: Number(values.NbHeuresCours),
+        NbHeuresTD: Number(values.NbHeuresTD),
+        NbHeuresTP: Number(values.NbHeuresTP),
+        Annee: Number(values.Annee),
+        Credit: Number(values.Credit),
+        publiee: values.publiee,
+        competences: values.competences,
+        Curriculum: values.Curriculum?.map(chapitre => ({
+          ...chapitre,
+          sections: chapitre.sections?.map(section => ({
+            ...section,
+            dateFinSection: section.AvancementSection === 'Terminee' 
+              ? new Date().toISOString() 
+              : null
+          })) || []
+        })) || []
+      };
+
+      const token = localStorage.getItem('token');
+      const method = selectedMatiere ? 'patch' : 'post';
+      const url = selectedMatiere 
+        ? `http://localhost:5000/matieres/${selectedMatiere._id}`
+        : 'http://localhost:5000/matieres';
+
+      const { data: responseData } = await axios[method](url, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setState(prev => ({
+        ...prev,
+        data: selectedMatiere 
+          ? prev.data.map(item => item._id === selectedMatiere._id ? responseData : item) 
+          : [...prev.data, responseData],
+        isModalOpen: false
+      }));
+
+      message.success(`Matière ${selectedMatiere ? 'modifiée' : 'créée'} avec succès`);
+    } catch (err) {
+      message.error(err.response?.data?.message || 'Erreur de validation');
+    }
+  };
+
+  // Rendu du formulaire
+  const renderFormFields = () => (
+    <>
+      {/* Section Informations de base */}
+      <div className="form-section">
+        <Form.Item
+          name="CodeMatiere"
+          label="Code matière"
+          rules={[{ required: true, message: 'Champ obligatoire' }]}
+        >
+          <Input placeholder="Ex: MTH101" />
+        </Form.Item>
+
+        <Form.Item
+          name="Nom"
+          label="Nom de la matière"
+          rules={[{ required: true, message: 'Champ obligatoire' }]}
+        >
+          <Input placeholder="Ex: Mathématiques appliquées" />
+        </Form.Item>
+
+        <Form.Item
+          name="GroupeModule"
+          label="Groupe de module"
+          rules={[{ required: true, message: 'Champ obligatoire' }]}
+        >
+          <Input placeholder="Ex: GM1" />
+        </Form.Item>
+      </div>
+
+      {/* Section Coefficients */}
+      <div className="form-section">
+        <Form.Item
+          name="CoeffGroupeModule"
+          label="Coefficient groupe module"
+          rules={[{ 
+            required: true, 
+            type: 'number',
+            min: 0,
+            message: 'Doit être un nombre positif'
+          }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="Coefficient"
+          label="Coefficient matière"
+          rules={[{ 
+            required: true, 
+            type: 'number',
+            min: 0,
+            message: 'Doit être un nombre positif'
+          }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+      </div>
+
+      {/* Section Volume horaire */}
+      <div className="form-section">
+        <Form.Item
+          name="VolumeHoraire"
+          label="Volume horaire total"
+          rules={[{ 
+            required: true, 
+            type: 'number',
+            min: 0,
+            message: 'Doit être un nombre positif'
+          }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="NbHeuresCours"
+          label="Heures de cours"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="NbHeuresTD"
+          label="Heures de TD"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="NbHeuresTP"
+          label="Heures de TP"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+      </div>
+
+      {/* Section Organisation */}
+      <div className="form-section">
+        <Form.Item
+          name="Niveau"
+          label="Niveau"
+          rules={[{ required: true, message: 'Sélection obligatoire' }]}
+        >
+          <Select>
+            <Option value="1ING">1ère année</Option>
+            <Option value="2ING">2ème année</Option>
+            <Option value="3ING">3ème année</Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item
+          name="Semestre"
+          label="Semestre"
+          rules={[{ required: true, message: 'Sélectionnez un semestre' }]}
+        >
+          <Select>
+            <Option value="S1">S1</Option>
+            <Option value="S2">S2</Option>
+            <Option value="S3">S3</Option>
+            <Option value="S4">S4</Option>
+            <Option value="S5">S5</Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item
+          name="Annee"
+          label="Année universitaire"
+          rules={[{ 
+            required: true, 
+            type: 'number',
+            min: 2000,
+            max: 2100,
+            message: 'Année entre 2000 et 2100'
+          }]}
+        >
+          <InputNumber style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item
+          name="Credit"
+          label="Crédits"
+          rules={[{ required: true, type: 'number', min: 0 }]}
+        >
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+      </div>
+
+      {/* Section Compétences */}
+      <div className="form-section">
+        <Form.Item
+          name="competences"
+          label="Compétences associées"
+          rules={[{ required: true, message: 'Sélection obligatoire' }]}
+        >
+          <Select
+            mode="multiple"
+            showSearch
+            optionFilterProp="children"
+            placeholder="Sélectionnez les compétences"
+          >
+            {competences.map(c => (
+              <Option key={c._id} value={c._id}>
+                {c.nomCompetence} ({c.codeCompetence})
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item
+          name="publiee"
+          label="Publication"
+          valuePropName="checked"
+        >
+          <Switch
+            checkedChildren="Publiée"
+            unCheckedChildren="Masquée"
+          />
+        </Form.Item>
+      </div>
+
+      {/* Section Curriculum */}
+      <Form.Item
+        label="Curriculum"
+        required
+        rules={[{ required: true, message: 'Le curriculum est obligatoire' }]}
+      >
+        <Form.List name="Curriculum">
+    {(chapitres, { add: addChapitre, remove: removeChapitre }) => (
+      <div>
+        {chapitres.map(({ key: chapitreKey, name: chapitreName, ...restChapitreField }) => (
+          <div key={chapitreKey} style={{ marginBottom: 24, border: '1px solid #d9d9d9', padding: 16, borderRadius: 4 }}>
+            <Form.Item
+              {...restChapitreField}
+              name={[chapitreName, 'titreChapitre']}
+              label="Titre du chapitre"
+              rules={[{ required: true, message: 'Titre obligatoire' }]}
+            >
+              <Input placeholder="Introduction à..." />
+            </Form.Item>
+
+            <Form.Item
+              {...restChapitreField}
+              name={[chapitreName, 'AvancementChap']}
+              label="Statut du chapitre"
+              rules={[{ required: true }]}
+            >
+              <Select>
+                <Select.Option value="NonCommencee">Non commencé</Select.Option>
+                <Select.Option value="EnCours">En cours</Select.Option>
+                <Select.Option value="Terminee">Terminé</Select.Option>
+              </Select>
+            </Form.Item>
+
+            <Form.List name={[chapitreName, 'sections']}>
+              {(sections, { add: addSection, remove: removeSection }) => (
+                <>
+                  {sections.map(({ key: sectionKey, name: sectionName, ...restSectionField }) => (
+                    <div key={sectionKey} style={{ marginLeft: 16, marginBottom: 16, padding: 8, backgroundColor: '#fafafa' }}>
+                      <Form.Item
+                        {...restSectionField}
+                        name={[sectionName, 'nomSection']}
+                        label="Nom de la section"
+                        rules={[{ required: true }]}
+                      >
+                        <Input />
+                      </Form.Item>
+
+                      <Form.Item
+                        {...restSectionField}
+                        name={[sectionName, 'Description']}
+                        label="Description"
+                        rules={[{ required: true }]}
+                      >
+                        <Input.TextArea />
+                      </Form.Item>
+
+                      <Form.Item
+                        {...restSectionField}
+                        name={[sectionName, 'AvancementSection']}
+                        label="Statut"
+                        rules={[{ required: true }]}
+                      >
+                        <Select>
+                          <Select.Option value="NonCommencee">Non commencé</Select.Option>
+                          <Select.Option value="EnCours">En cours</Select.Option>
+                          <Select.Option value="Terminee">Terminé</Select.Option>
+                        </Select>
+                      </Form.Item>
+
+                      <MinusCircleOutlined
+                        onClick={() => removeSection(sectionName)}
+                        style={{ color: 'red', marginLeft: 8 }}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="dashed"
+                    onClick={() => addSection()}
+                    icon={<PlusOutlined />}
+                    style={{ width: '60%', marginLeft: 16 }}
+                  >
+                    Ajouter une section
+                  </Button>
+                </>
+              )}
+            </Form.List>
+
+            <MinusCircleOutlined
+              onClick={() => removeChapitre(chapitreName)}
+              style={{ color: 'red', marginTop: 8 }}
+            />
+          </div>
+        ))}
+        <Button
+          type="dashed"
+          onClick={() => addChapitre()}
+          icon={<PlusOutlined />}
+          style={{ width: '100%' }}
+        >
+          Ajouter un chapitre
+        </Button>
+      </div>
+    )}
+  </Form.List>
+        
+      </Form.Item>
+    </>
+  );
 
   return (
-    <div className="matieres-container">
+    <div className="matieres-page">
       <Navbar />
-      <div className="main-content">
-        <SidebarLayout />
-        <div className="table-container">
-          <div className="table-header">
-            <h2>Liste des Matières</h2>
-            {userRole === "admin" && (
-            <ButtonModel
-              text="Ajouter une matière"
+      <SidebarLayout />
+      
+      <div className="content-container">
+        <div className="header-section">
+          <Input.Search
+            placeholder="Rechercher par nom"
+            onChange={e => setState(prev => ({ ...prev, searchText: e.target.value }))}
+            style={{ width: 300 }}
+          />
+          
+          {userRole === 'admin' && (
+            <Button 
+              type="primary" 
               icon={<PlusOutlined />}
-              onClick={showModal}
-            />
-        )}
-          </div>
-          <TableData columns={columns} data={matieres} />
-        </div>
-      </div>
-      <Modal
-        title="Ajouter une nouvelle matière"
-        visible={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={handleOk}>
-          <Form.Item
-            name="name"
-            label="Nom de la matière"
-            rules={[{ required: true, message: "Veuillez entrer le nom de la matière !" }]}         
-          >
-            <Input /> 
-            </Form.Item>
-            
-           
-          <Form.Item
-            name="Coefficient Groupe-Module"
-            label="Coefficient Groupe-Module"
-            rules={[{ required: true, message: "Veuillez entrer le Coefficient Groupe-Module !" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="credit"
-            label="Crédit"
-            rules={[{ required: true, message: "Veuillez entrer le nombre de crédits !" }]}
-          >
-                 <Input />
-          </Form.Item>
-          <Form.Item
-            name="volume-horaire"
-            label="Volume-Horaire"
-            rules={[{ required: true, message: "Veuillez entrer le volume horaire !" }]}
-          >
-             <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-cours"
-            label="Nbheures-cours"
-            rules={[{ required: true, message: "Veuillez entrer le nombre d'heure de cours!" }]}
-          >
-              <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-TD"
-            label="Nbheures-TD"
-            rules={[{ required: true, message: "Veuillez entrer le nombre d'heure de TD!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-TP"
-            label="Nbheures-TP"
-            rules={[{ required: true, message: "Veuillez entrer le nombre d'heure de TP!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="Année"
-            label="Année"
-            rules={[{ required: true, message: "Veuillez entrer l'année" }]}
-          >
-            
-            
-            <InputNumber min={0} />
-          </Form.Item>
-          <Form.Item
-            name="coefficient"
-            label="Coefficient"
-            rules={[{ required: true, message: "Veuillez entrer le coefficient !" }]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-       
-          
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Ajouter
+              onClick={() => setState(prev => ({
+                ...prev,
+                selectedMatiere: null,
+                isModalOpen: true
+              }))}
+            >
+              Nouvelle matière
             </Button>
-            <Button key="close" onClick={handleCancel}>
-      Annuler
-    </Button>,
-          </Form.Item>
-        </Form>
-      </Modal>
-      
+          )}
+        </div>
 
-      <Modal
-        title="Détails de la matière"
-        visible={isDetailsModalVisible}
-        
-        onCancel={handleCancel}
-        footer={[
-          <Button key="close" onClick={handleDetailsCancel}>
-            Fermer
-          </Button>,
-          
-        ]}
-      >
-        {selectedMatiere && (
-          <div>
-            <p><strong>Nom :</strong> {selectedMatiere.name}</p>
-            <p><strong>Coefficient Groupe-Module :</strong> {selectedMatiere["Coefficient Groupe-Module"]}</p>
-            <p><strong>Crédit :</strong> {selectedMatiere.credit}</p>
-            <p><strong>Volume Horaire :</strong> {selectedMatiere["volume-horaire"]}</p>
-            <p><strong>Nb heures cours :</strong> {selectedMatiere["Nbheures-cours"]}</p>
-            <p><strong>Nb heures TD :</strong> {selectedMatiere["Nbheures-TD"]}</p>
-            <p><strong>Nb heures TP :</strong> {selectedMatiere["Nbheures-TP"]}</p>
-            <p><strong>Année :</strong> {selectedMatiere["Année"]}</p>
-            <p><strong>Coefficient :</strong> {selectedMatiere.coefficient}</p>
-            <p><strong>Publier :</strong> {selectedMatiere.isPublished ? 'Oui' : 'Non'}</p>
+        {error && <Alert message={error} type="error" showIcon />}
 
-
-          </div>
+        {loading ? (
+          <Spin size="large" />
+        ) : (
+          <Table
+            columns={columns}
+            dataSource={data.filter(item => 
+              item.Nom.toLowerCase().includes(searchText.toLowerCase()) &&
+              (showArchived || !item.archived)
+            )}
+            bordered
+            pagination={{ pageSize: 8 }}
+            rowClassName={record => record.archived ? 'archived-row' : ''}
+          />
         )}
-      </Modal>
 
-      <Modal
-  title="Modifier la matière"
-  visible={isEditModalVisible}
-  onCancel={handleCancel}
-  footer={null}
->
-  <Form form={form} layout="vertical" onFinish={handleEditOk}>
-    <Form.Item
-      name="name"
-      label="Nom de la matière"
-      
-    >
-      <Input />
-    </Form.Item>
-    <Form.Item
-            name="Coefficient Groupe-Module"
-            label="Coefficient Groupe-Module"
-            
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="credit"
-            label="Crédit"
-           
-          >
-                 <Input />
-          </Form.Item>
-          <Form.Item
-            name="volume-horaire"
-            label="Volume-Horaire"
-            
-          >
-             <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-cours"
-            label="Nbheures-cours"
-            
-          >
-              <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-TD"
-            label="Nbheures-TD"
-            
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="Nbheures-TP"
-            label="Nbheures-TP"
-           
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="Année"
-            label="Année"
-            
-          >
-            
-            
-            <InputNumber min={0} />
-          </Form.Item>
-          <Form.Item
-            name="coefficient"
-            label="Coefficient"
-            
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-    <Form.Item>
-      <Button type="primary" htmlType="submit">
-        Enregistrer les modifications
-      </Button>
-      <Button onClick={handleEditCancel} style={{ marginLeft: 8 }}>
-        Annuler
-      </Button>
-    </Form.Item>
-  </Form>
-</Modal>
-
-      
+        <Modal
+          title={selectedMatiere ? "Modifier la matière" : "Nouvelle matière"}
+          open={isModalOpen}
+          onCancel={() => setState(prev => ({ ...prev, isModalOpen: false }))}
+          footer={null}
+          width={800}
+          destroyOnClose
+        >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            {renderFormFields()}
+            <Form.Item>
+              <Button type="primary" htmlType="submit" block>
+                {selectedMatiere ? 'Mettre à jour' : 'Créer la matière'}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
     </div>
-    
-    
-    
   );
-}
+};
 
 export default Matieres;
+
