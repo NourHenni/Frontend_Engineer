@@ -1,15 +1,25 @@
 import React, { useState } from "react";
 import FormModal from "../../../components/modals/FormModal";
-import { addPeriod } from "../../../services/pfaServices"; // Import de la fonction
+import { addPeriod, publishPfas } from "../../../services/pfaServices";
 import moment from "moment";
+import { message, Spin } from "antd";
 
-function AddPeriod({ isModalOpen, setIsModalOpen, title, refreshData }) {
+function AddPeriod({
+  isModalOpen,
+  setIsModalOpen,
+  title,
+  refreshData,
+  source,
+}) {
+  console.log("source", source);
   const [formData, setFormData] = useState({
     name: "",
     date: [],
     select: "",
   });
-  console.log(formData.date);
+  console.log("dates ", formData.date);
+
+  const [loading, setLoading] = useState(false); // État pour gérer le spinner
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -19,29 +29,77 @@ function AddPeriod({ isModalOpen, setIsModalOpen, title, refreshData }) {
     }));
   };
 
+  const handleDateChange = (dates) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      date: dates,
+    }));
+  };
+
   const handleSubmit = async (values) => {
     try {
-      // Si la plage de dates est définie, formater les dates
+      setLoading(true); // Début de l'opération, afficher le spinner
+
       if (values.date && values.date.length === 2) {
-        values.Date_Debut_depot = moment(values.date[0]).format("YYYY-MM-DD");
-        values.Date_Fin_depot = moment(values.date[1]).format("YYYY-MM-DD"); // Add the time part to match the backend
+        const dateDebut = moment(values.date[0].$d).format("YYYY-MM-DD");
+        const dateFin = moment(values.date[1].$d).format("YYYY-MM-DD");
+        console.log("valudeDate", values.date);
+        console.log("dateDebut", dateDebut);
+        console.log("dateFin", dateFin);
+
+        let newPeriod = {
+          Nom: values.name,
+          type: values.select,
+        };
+
+        // Adapter les champs selon le contexte
+        if (source === "periode") {
+          newPeriod.Date_Debut_depot = dateDebut;
+          newPeriod.Date_Fin_depot = dateFin;
+        } else if (source === "choixpfa") {
+          newPeriod.dateDebutChoix = dateDebut;
+          newPeriod.dateFinChoix = dateFin;
+        }
+
+        let result;
+
+        // Appel à la fonction appropriée selon le contexte
+        if (source === "periode") {
+          result = await addPeriod(newPeriod);
+        } else if (source === "choixpfa") {
+          result = await publishPfas(newPeriod);
+        }
+
+        // Vérification du résultat et gestion des messages
+        if (result && result.message) {
+          message.success(result.message); // Affiche le message de succès
+          refreshData(); // Rafraîchir les données
+          setIsModalOpen(false); // Fermer la modal
+        } else {
+          message.error(result.message);
+        }
+      } else {
+        message.error("Veuillez sélectionner une période !");
       }
-
-      // Construire l'objet à envoyer à l'API
-      const newPeriod = {
-        Nom: values.name,
-        Date_Debut_depot: values.Date_Debut_depot,
-        Date_Fin_depot: values.Date_Fin_depot,
-        type: values.select,
-      };
-
-      // Appeler la fonction pour ajouter la période (envoi à l'API)
-      const result = await addPeriod(newPeriod);
-      console.log("Période ajoutée avec succès : ", result);
-      setIsModalOpen(false);
-      refreshData();
     } catch (error) {
-      console.error("Erreur lors de l'ajout de la période : ", error);
+      // Loggez l'erreur complète dans la console pour déboguer
+      console.error(
+        "Erreur lors de l'ajout de la période : ",
+        error.response ? error.response.data : error
+      );
+
+      // Si le message d'erreur est présent dans la réponse du serveur
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        message.error(error.response.data.message); // Affiche le message d'erreur retourné par le serveur
+      } else {
+        message.error("Une erreur s'est produite !");
+      }
+    } finally {
+      setLoading(false); // Arrêter le spinner après la requête
     }
   };
 
@@ -61,7 +119,7 @@ function AddPeriod({ isModalOpen, setIsModalOpen, title, refreshData }) {
       name: "date",
       type: "rangeDate",
       value: formData.date,
-      onChange: handleInputChange,
+      onChange: handleDateChange,
       rules: [
         { required: true, message: "Veuillez sélectionner la période !" },
       ],
@@ -72,20 +130,25 @@ function AddPeriod({ isModalOpen, setIsModalOpen, title, refreshData }) {
       type: "select",
       value: formData.select,
       onChange: handleInputChange,
-      options: [{ value: "PFA Project", label: "PFA Project" }],
+      options: [
+        { value: "PFA Project", label: "PFA Project" },
+        { value: "PFA CHOICE", label: "PFA CHOICE" },
+      ],
       rules: [{ required: true, message: "Veuillez choisir le type !" }],
     },
   ];
 
   return (
     <div>
-      <FormModal
-        isModalOpen={isModalOpen}
-        setIsModalOpen={setIsModalOpen}
-        formFields={formFields}
-        title={title}
-        onSubmit={handleSubmit} // Appeler handleSubmit dans AddPeriod
-      />
+      <Spin spinning={loading} size="large" tip="Chargement en cours...">
+        <FormModal
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          formFields={formFields}
+          title={title}
+          onSubmit={handleSubmit}
+        />
+      </Spin>
     </div>
   );
 }
