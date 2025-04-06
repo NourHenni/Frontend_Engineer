@@ -1,15 +1,11 @@
-/* Table container */
-.table-container {
-    position: relative;
-    top: 50px;
-    width: 100%; /* Ajuste à la largeur disponible */
-     /* Permet d'étendre si besoin */
-    margin-left: 280px;
-    padding: 15px 10px 16px 10px;
-    background: #fff;
-    border: 1px solid #ccc;
-    overflow: hidden; /* Empêche le scroll */
-}
+.spin-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px; /* adapte selon la hauteur que tu veux */
+  }
+  
+
 
 /* En-tête contenant le titre et le bouton */
 .table-header {
@@ -17,9 +13,9 @@
     position: sticky;
     top: 0;
     background: #fff;
-    justify-content: space-between;
+    justify-content: space-between; /* Espace entre les éléments à gauche et à droite */
     align-items: center;
-    margin-right: 30px;
+    margin-right: 20px;
     padding: 10px 10px;
     z-index: 10;
     border-bottom: 2px solid #ddd;
@@ -52,4 +48,5 @@
 /* Optionnel: Ajouter une bordure sous chaque cellule */
 .table-container .ant-table td {
     border-bottom: 1px solid #ddd;
+   
 }

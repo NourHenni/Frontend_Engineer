@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { UserContext } from "../App";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  const location = useLocation();
+  //const location = useLocation();
+  const user = useContext(UserContext);
 
-  if (!token) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+  if (!token || !user) {
+    return <Navigate to="/" />;
+
   }
 
   return children;

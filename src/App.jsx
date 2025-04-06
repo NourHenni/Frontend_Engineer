@@ -9,7 +9,7 @@ import {
 import LoginPage from "./pages/Auth/Login/LoginPage";
 import Competences from "./pages/competences/Competences";
 import Matieres from "./pages/matieres/Matieres";
-import Pfa from "./pages/pfa/Pfa";
+
 import StageEte from "./pages/stageEte/StageEte";
 import Users from "./pages/Users/Users";
 import { Spin } from "antd";
@@ -17,7 +17,10 @@ import HomePage from "./pages/Home/HomePage"; // Make sure you create this HomeP
 import ProtectedRoute from "./pages/ProtectedRoute";
 import "./App.css";
 import { fetchUserInfo } from "./services/authServices";
-
+import Pfa from "./pages/pfa/Pfa";
+import ListePfa from "./pages/pfa/listePfas/ListePfa"
+import StudentDetails from "./pages/Users/StudentDetails";
+import TeachersDetails from "./pages/Users/TeachersDetails";
 export const UserContext = createContext();
 
 function App() {
@@ -76,6 +79,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/home/listePfas"
+                element={
+                  <ProtectedRoute>
+                    <ListePfa />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/home/Matieres"
                 element={
@@ -100,14 +112,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/home/Users"
-                element={
-                  <ProtectedRoute>
-                    <Users />
-                  </ProtectedRoute>
-                }
-              />
+             <Route path="/home/Users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+        <Route path="/student/:id" element={<StudentDetails />} />
+        <Route path="/teacher/:id" element={<TeachersDetails />} />
             </>
           )}
 
@@ -127,7 +134,7 @@ function App() {
                   path="/home/PFA"
                   element={
                     <ProtectedRoute>
-                      <Pfa />
+                      <ListePfa />
                     </ProtectedRoute>
                   }
                 />
@@ -159,7 +166,6 @@ function App() {
             )}
 
           {/* Redirection de secours */}
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </UserContext.Provider>

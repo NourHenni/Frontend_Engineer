@@ -50,6 +50,7 @@ const Matieres = () => {
           })
         ]);
 
+
         setState(prev => ({
           ...prev,
           data: matieresRes.data.map(item => ({
@@ -61,6 +62,7 @@ const Matieres = () => {
           loading: false
         }));
 
+
       } catch (err) {
         setState(prev => ({ ...prev, error: err.message, loading: false }));
       }
@@ -68,6 +70,7 @@ const Matieres = () => {
 
     fetchData();
   }, []);
+
   const handleUpdateAvancement = async (matiereId, chapitreIndex, sectionIndex, nouveauStatut) => {
   try {
     const token = localStorage.getItem('token');
@@ -124,12 +127,14 @@ const handleEditCurriculum = (record) => {
     Curriculum: record.Curriculum || []
   });
 };
+
   // Configuration des colonnes du tableau
   const columns = [
     {
       title: 'Code',
       dataIndex: 'CodeMatiere',
       key: 'CodeMatiere',
+
     },
     {
       title: 'Nom',
@@ -137,12 +142,16 @@ const handleEditCurriculum = (record) => {
       key: 'Nom',
     },
     {
+
       title: 'Statut',
       key: 'status',
       render: (_, record) => (
         <Space>
           <Tag color={record.publiee ? 'green' : 'volcano'}>
-            {record.publiee ? 'Publiée' : 'Brouillon'}
+
+
+            {record.publiee ? 'Publiée' : 'Masquée'}
+
           </Tag>
           <Tag color={record.archived ? 'red' : 'blue'}>
             {record.archived ? 'Archivée' : 'Active'}
@@ -156,11 +165,13 @@ const handleEditCurriculum = (record) => {
       render: (_, record) => (
         <Space>
           <Button onClick={() => showDetails(record)}>Consulter</Button>
+
           {userRole === 'enseignant' && (
         <Button onClick={() => handleEditCurriculum(record)}>
           Modifier Curriculum
         </Button>
       )}
+
           {userRole === 'admin' && (
             <>
               <Button onClick={() => handleEdit(record)}>Modifier</Button>
@@ -176,7 +187,10 @@ const handleEditCurriculum = (record) => {
                 icon={record.publiee ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
                 onClick={() => togglePublish(record)}
               >
-                {record.publiee ? 'Dépublier' : 'Publier'}
+
+
+                {record.publiee ? 'Masquer' : 'Publier'}
+
               </Button>
             </>
           )}
@@ -218,6 +232,7 @@ const handleEditCurriculum = (record) => {
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       ));
@@ -239,7 +254,7 @@ const handleEditCurriculum = (record) => {
           <h3>Compétences associées</h3>
           <ul>
             {record.competences.map((c, i) => (
-              <li key={i}>{c.nomCompetence} : {c.codeCompetence}</li>
+              <li key={i}>{c.nomCompetence}  :  {c.codeCompetence}</li>
             ))}
           </ul>
 
@@ -248,6 +263,7 @@ const handleEditCurriculum = (record) => {
             {renderCurriculum()}
           </div>
         </div>
+
       )
     });
   };
@@ -304,6 +320,7 @@ const handleEditCurriculum = (record) => {
 
   // Soumission du formulaire
   const handleSubmit = async (values) => {
+
     let payload;
     try {
         if (userRole === 'enseignant') {
@@ -322,6 +339,7 @@ const handleEditCurriculum = (record) => {
     }else {
       // Pour les admins, logique normale avec tous les champs
       payload = {
+
         ...values,
         CoeffGroupeModule: Number(values.CoeffGroupeModule),
         Coefficient: Number(values.Coefficient),
@@ -343,7 +361,9 @@ const handleEditCurriculum = (record) => {
           })) || []
         })) || []
       };
+
     }
+
       const token = localStorage.getItem('token');
       const method = selectedMatiere ? 'patch' : 'post';
       const url = selectedMatiere 
@@ -375,11 +395,13 @@ const handleEditCurriculum = (record) => {
         }));
 
 
+
       message.success(`Matière ${selectedMatiere ? 'modifiée' : 'créée'} avec succès`);
     } catch (err) {
       message.error(err.response?.data?.message || 'Erreur de validation');
     }
   };
+
 const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matiereId) => {
   try {
     // Optimistic UI update
@@ -426,14 +448,16 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
 
     <>
         <>
+
       {/* Section Informations de base */}
       <div className="form-section">
         <Form.Item
           name="CodeMatiere"
           label="Code matière"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
-        >
+
           <Input placeholder="Ex: MTH101" disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -441,7 +465,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Nom de la matière"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
         >
+
           <Input placeholder="Ex: Mathématiques appliquées"  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -449,7 +475,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Groupe de module"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
         >
+
           <Input placeholder="Ex: GM1"  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
       </div>
 
@@ -465,7 +493,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
             message: 'Doit être un nombre positif'
           }]}
         >
+
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -477,8 +507,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
             min: 0,
             message: 'Doit être un nombre positif'
           }]}
-        >
+
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
       </div>
 
@@ -494,7 +525,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
             message: 'Doit être un nombre positif'
           }]}
         >
+
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
 
         <Form.Item
@@ -503,6 +536,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -510,7 +544,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Heures de TD"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
+
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -518,7 +554,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Heures de TP"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
+
           <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
       </div>
 
@@ -529,7 +567,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Niveau"
           rules={[{ required: true, message: 'Sélection obligatoire' }]}
         >
+
           <Select disabled={userRole === 'enseignant'} >
+
             <Option value="1ING">1ère année</Option>
             <Option value="2ING">2ème année</Option>
             <Option value="3ING">3ème année</Option>
@@ -541,7 +581,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Semestre"
           rules={[{ required: true, message: 'Sélectionnez un semestre' }]}
         >
+
           <Select  disabled={userRole === 'enseignant'} >
+
             <Option value="S1">S1</Option>
             <Option value="S2">S2</Option>
             <Option value="S3">S3</Option>
@@ -561,7 +603,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
             message: 'Année entre 2000 et 2100'
           }]}
         >
+
           <InputNumber style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
 
         <Form.Item
@@ -569,7 +613,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Crédits"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
+
           <InputNumber min={0} style={{ width: '100%' }} disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
       </div>
 
@@ -580,7 +626,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Compétences associées"
           rules={[{ required: true, message: 'Sélection obligatoire' }]}
         >
+
           <Select  disabled={userRole === 'enseignant'} 
+
             mode="multiple"
             showSearch
             optionFilterProp="children"
@@ -599,6 +647,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
           label="Publication"
           valuePropName="checked"
         >
+
           <Switch  disabled={userRole === 'enseignant'} 
             checkedChildren="Publiée"
             unCheckedChildren="Brouillon"
@@ -612,6 +661,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
         label="Curriculum"
         required
         rules={[{ required:false, message: 'Le curriculum est obligatoire' }]}
+
       >
         <Form.List name="Curriculum">
     {(chapitres, { add: addChapitre, remove: removeChapitre }) => (
@@ -625,6 +675,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
               rules={[{ required: true, message: 'Titre obligatoire' }]}
             >
               <Input placeholder="Introduction à..." />
+
             </Form.Item>
 
             <Form.Item
@@ -639,6 +690,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
                 <Select.Option value="Terminee">Terminé</Select.Option>
               </Select>
             </Form.Item>
+
 
             <Form.List name={[chapitreName, 'sections']}>
               {(sections, { add: addSection, remove: removeSection }) => (
@@ -669,6 +721,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
                         label="Statut"
                         rules={[{ required: true }]}
                       >
+
                         <Select  onChange={(value) => {
       handleStatusChange(
         value, 
@@ -677,6 +730,7 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
         selectedMatiere._id
       );
     }}>
+
                           <Select.Option value="NonCommencee">Non commencé</Select.Option>
                           <Select.Option value="EnCours">En cours</Select.Option>
                           <Select.Option value="Terminee">Terminé</Select.Option>
@@ -721,7 +775,9 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
         
       </Form.Item>
     </>
+
 );
+
 
   return (
     <div className="matieres-page">
@@ -790,4 +846,6 @@ const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matier
   );
 };
 
+
 export default Matieres;    
+
