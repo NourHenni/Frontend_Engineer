@@ -5,8 +5,17 @@ import Navbar from '../../components/navbar/Navbar';
 import SidebarLayout from '../../components/sidebar/Sidebar';
 import axios from 'axios';
 import './Competences.css';
-
+import { useContext } from 'react';
+import { UserContext } from '../../App';
 function Competences() {
+   const user = useContext(UserContext); // Récupérer le contexte
+   const userRole = user?.role;
+const CODE_HINTS = {
+  outilsEtTechniquesScientifiques: "Codes valides : CS1, CS2",
+  compTechnologiques: "Codes valides : CS3 à CS8",
+  autoDevlopEtInnovation: "Code valide : CS9",
+  Communication: "Codes valides : CS10, CS11"
+};
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
@@ -15,7 +24,8 @@ function Competences() {
   const [showArchived, setShowArchived] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCompetence, setSelectedCompetence] = useState(null);
-  const [competences,setCompetences]=useState({ nomCompetence: "" })
+  const [competences,setCompetences]=useState({ nomCompetence: "" });
+const [selectedCompetenceName, setSelectedCompetenceName] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,11 +50,21 @@ function Competences() {
           throw new Error('Format de données invalide');
         }
 
-        setData(apiData.map(item => ({
+         setData(response.data.map(item => ({
+        ...item,
+        key: item._id,
+        
+        matieres: item.matieres.map(m => ({
+          _id: m._id,
+          Nom: m.Nom || 'Nom inconnu'
+        }))
+      })));
+       /* setData(apiData.map(item => ({
           ...item,
-          key: item._id?.$oid || item.id,
+          key:item._id,
           matieres: item.matieres || [],
-        })));
+        })));*/// Ajouter pour debug
+console.log('Données reçues:', response.data);
 
       } catch (err) {
         console.error('Erreur:', err);
@@ -79,18 +99,21 @@ function Competences() {
       title: 'Matières',
       dataIndex: 'matieres',
       key: 'matieres',
-      render: (matieres) => (
+      
+      render: (matieres) => ( console.log("Données matières :", matieres),
+        
         <Dropdown
           menu={{
-            items: (matieres || []).map((matiere, index) => ({
-              key: index,
-              label: matiere,
+            items: (matieres || []).map((matiere) => ({
+              key:matiere._id,
+              label:matiere.Nom,
             }))
           }}
         >
+          
           <Button type="link">
             <Space>
-              {(matieres || []).length} matière{(matieres || []).length > 1 ? 's' : ''}
+    {(matieres || []).length} matière{(matieres||[]).length >1?'s':''}
               <DownOutlined />
             </Space>
           </Button>
@@ -111,6 +134,8 @@ function Competences() {
       key: 'action',
       render: (_, record) => (
         <Space>
+          {userRole === 'admin' && (
+          <>
           <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Button icon={<DeleteOutlined />} danger onClick={() => handleDelete(record)} />
           <Button 
@@ -119,7 +144,10 @@ function Competences() {
           >
             {record.archived ? 'Désarchiver' : 'Archiver'}
           </Button>
+          </>
+        )}
           <Button type="link" icon={<EyeOutlined />} onClick={() => handleView(record)}/> 
+          
         </Space>
       )
     }
@@ -140,6 +168,10 @@ function Competences() {
 
   const handleArchive = async (record) => {
     try {
+       if (userRole !== 'admin') {
+    message.error('Action non autorisée');
+    return;
+  }
       const token = localStorage.getItem('token');
       const response = await axios.patch(
         `http://localhost:5000/Competences/${record._id}`,
@@ -171,7 +203,10 @@ function Competences() {
   const handleDelete = async (competence) => {
   try {
     const token = localStorage.getItem('token');
-
+ if (userRole !== 'admin') {
+    message.error('Action non autorisée');
+    return;
+  }
     // Vérifier si la compétence est utilisée dans des matières
     if (competence.matieres?.length > 0) {
       Modal.confirm({
@@ -181,7 +216,7 @@ function Competences() {
             <p>Cette compétence est utilisée dans {competence.matieres.length} matière(s) :</p>
             <ul>
               {competence.matieres.map((matiere, index) => (
-                <li key={index}>{matiere}</li>
+                <li key={index}>{matiere.Nom}</li>
               ))}
             </ul>
             <p style={{ color: '#ff4d4f', marginTop: '10px' }}>
@@ -268,46 +303,50 @@ function Competences() {
           <p><strong>Nom :</strong> {record.nomCompetence}</p>
           <p><strong>Code :</strong> {record.codeCompetence}</p>
           <p><strong>Description :</strong> {record.descriptionCompetence}</p>
-          <p><strong>Matières associées :</strong> {(record.matieres || []).join(', ') || 'Aucune'}</p>
+          <p><strong>Matières associées :</strong> 
+          {(record.matieres || [])
+            .map(matiere => matiere.Nom) // Extraction des noms
+            .join(', ') || 'Aucune'}
+        </p>
           <p><strong>Statut :</strong> {record.archived ? 'Archivée' : 'Active'}</p>
         </div>
       ),
       width: 600,
     });
   };
+const refreshCompetences = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get('http://localhost:5000/Competences', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    setState(prev => ({
+      ...prev,
+      competences: response.data.map(c => ({
+        ...c,
+        matieres: c.matieres || []
+      }))
+    }));
+  } catch (err) {
+    console.error('Erreur rafraîchissement compétences:', err);
+  }
+};
 
 const handleSubmit = async (values) => {
   const token = localStorage.getItem('token');
   try {
-    
-    if (selectedCompetence) {
-       if (selectedCompetence) {
-      // Vérifier si la compétence a des matières associées
-      if (selectedCompetence.matieres?.length > 0) {
-        // Afficher une confirmation modale
-        const confirmUpdate = await new Promise((resolve) => {
-          Modal.confirm({
-            title: 'Attention - Matières associées',
-            content: (
-              <div>
-                <p>Cette compétence est utilisée dans {selectedCompetence.matieres.length} matière(s).</p>
-                <p>Voulez-vous vraiment continuer la modification ?</p>
-              </div>
-            ),
-            okText: 'Continuer',
-            cancelText: 'Annuler',
-            onOk: () => resolve(true),
-            onCancel: () => resolve(false),
-          });
-        });
+    if (userRole !== 'admin') {
+      message.error('Action non autorisée');
+      return;
+    }
 
-        if (!confirmUpdate) {
-          setIsModalOpen(false);
-          return;
-        }
-      }
-        await axios.patch(
-        `http://localhost:5000/Competences/${selectedCompetence?._id}`,values,
+    let response;
+    if (selectedCompetence) {
+      // Modification existante
+      response = await axios.patch(
+        `http://localhost:5000/Competences/${selectedCompetence._id}`,
+        values,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -315,10 +354,9 @@ const handleSubmit = async (values) => {
           }
         }
       );
-   
-      message.success('Modification réussie !'); // Message pour modification
     } else {
-      await axios.post(
+      // Nouvelle compétence
+      response = await axios.post(
         'http://localhost:5000/Competences',
         {
           ...values,
@@ -332,22 +370,40 @@ const handleSubmit = async (values) => {
           }
         }
       );
-      message.success('Ajout réussi !'); // Message pour ajout
     }
-  }
-    const response = await axios.get('http://localhost:5000/Competences', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
+
+    // Mise à jour de l'état
+    if (selectedCompetence) {
+      setData(prev => 
+        prev.map(item => 
+          item._id === selectedCompetence._id ? response.data : item
+        )
+      );
+    } else {
+      setData(prev => [...prev, response.data]);
+    }
+    const { data: freshData } = await axios.get('http://localhost:5000/Competences', {
+      headers: { Authorization: `Bearer ${token}` }
     });
-    setData(response.data.model || response.data);
+
+    setData(freshData.map(item => ({
+      ...item,
+      key: item._id,
+      matieres: item.matieres.map(m => ({
+        _id: m._id,
+        Nom: m.Nom || 'Nom inconnu'
+      }))
+    })));
+await refreshCompetences();
+    message.success(selectedCompetence ? 'Modification réussie !' : 'Ajout réussi !');
     setIsModalOpen(false);
+    form.resetFields();
 
   } catch (err) {
+    console.error('Erreur:', err);
     message.error(err.response?.data?.message || 'Erreur de sauvegarde');
   }
 };
-
   const locale = {
     emptyText: error ? (
       <Alert message="Erreur" description={error} type="error" showIcon />
@@ -355,6 +411,7 @@ const handleSubmit = async (values) => {
       <span>Aucune donnée disponible</span>
     )
   };
+  
 const codeCompetenceValidator = (_, value) => {
   const nomCompetence = form.getFieldValue('nomCompetence');
   
@@ -363,6 +420,7 @@ const codeCompetenceValidator = (_, value) => {
     return Promise.resolve();
   }
 
+  
   const validCodes = {
     outilsEtTechniquesScientifiques: ['CS1', 'CS2'],
     compTechnologiques: ['CS3', 'CS4', 'CS5', 'CS6', 'CS7', 'CS8'],
@@ -389,19 +447,25 @@ const codeCompetenceValidator = (_, value) => {
             onChange={handleSearch}
             style={{ width: 300 }}
           />
-         
+       
           <Button
             type={showArchived ? "dashed" : "primary"}
-            onClick={() => setShowArchived(!showArchived)}
-            icon={showArchived ? <UndoOutlined /> : <InboxOutlined />}
+            onClick={() => userRole === 'admin' && setShowArchived(!showArchived)}
+            icon={() => userRole === 'admin' && showArchived ? <UndoOutlined /> : <InboxOutlined />}
+            disabled={userRole !== 'admin'}
+             style={{ 
+      cursor: userRole === 'admin' ? 'pointer' : 'not-allowed',
+      opacity: userRole !== 'admin' ? 0.7 : 1
+    }}
           >
+            
             {showArchived ? "Afficher actives" : "Afficher archives"}
           </Button>
-          
+          {userRole === 'admin' && (
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             Ajouter
           </Button>
-          
+    )}
         </div>
 
         <Spin spinning={loading} tip="Chargement..." className="spin-wrapper">
@@ -420,7 +484,8 @@ const codeCompetenceValidator = (_, value) => {
           title={selectedCompetence ? "Modifier compétence" : "Nouvelle compétence"}
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}
-          onOk={() => form.submit()}
+          onOk={() => userRole === 'admin' && form.submit()}
+          okButtonProps={{ disabled: userRole !== 'admin' }}
           width={600}
         >
           
@@ -437,6 +502,7 @@ const codeCompetenceValidator = (_, value) => {
         "compTechnologiques",
         "autoDevlopEtInnovation",
         "Communication"
+        
       ];
       return validNames.includes(value) 
         ? Promise.resolve() 
@@ -444,7 +510,10 @@ const codeCompetenceValidator = (_, value) => {
     }
   }]}
 >
-  <Select placeholder="Sélectionnez ">
+  <Select placeholder="Sélectionnez "   onChange={(value) => {
+      setSelectedCompetenceName(value);
+      form.setFieldsValue({ codeCompetence: '' }); // Réinitialiser le code
+    }}>
     <Select.Option value="outilsEtTechniquesScientifiques">
       Outils et Techniques Scientifiques
     </Select.Option>
@@ -461,34 +530,60 @@ const codeCompetenceValidator = (_, value) => {
             </Form.Item>
             
             <Form.Item
-              name="codeCompetence"
-              label="Code"
-              rules={[
-                { required: true, message: 'Ce champ est obligatoire' },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    const code = getFieldValue('codeCompetence')?.trim().toUpperCase();
-                    const exists = data.some(c => 
-                      c.codeCompetence.toUpperCase() === code && 
-                      c._id !== selectedCompetence?._id
-                    );
-                    if (exists) return Promise.reject('Ce code existe déjà !');
-                    return Promise.resolve();
-                  },
-                }),
-                
-    { required: true },
+  name="codeCompetence"
+  label="Code"
+  rules={[
+    { required: true, message: 'Ce champ est obligatoire' },
+    ({ getFieldValue }) => ({
+      validator(_, value) {
+        const code = getFieldValue('codeCompetence')?.trim().toUpperCase();
+        const exists = data.some(c => 
+          c.codeCompetence.toUpperCase() === code && 
+          c._id !== selectedCompetence?._id
+        );
+        if (exists) return Promise.reject('Ce code existe déjà !');
+        return Promise.resolve();
+      },
+    }),
+    
     { validator: codeCompetenceValidator }
-  
-              ]}
-            >
-              <Input 
-                style={{ textTransform: 'uppercase' }}
-                onInput={(e) => {
-                  e.target.value = e.target.value.toUpperCase();
-                }}
-              />
-            </Form.Item>
+  ]}
+  extra={form.getFieldValue('nomCompetence') && (
+    <div style={{ 
+      fontSize: 12,
+      color: '#666',
+      marginTop: 4,
+      fontStyle: 'italic'
+    }}>
+      {CODE_HINTS[form.getFieldValue('nomCompetence')]}
+    </div>
+  )}
+>
+  <Input 
+    style={{ textTransform: 'uppercase' }}
+    onInput={(e) => {
+      e.target.value = e.target.value.toUpperCase();
+    }}
+    
+  />
+</Form.Item>
+{selectedCompetenceName && (
+    <Alert
+      message={
+        <div>
+          Codes autorisés pour {form.getFieldValue('nomCompetence')} :{' '}
+          {CODE_HINTS[selectedCompetenceName]}
+        </div>
+      }
+      type="info"
+      showIcon
+      style={{ 
+        marginBottom: 16,
+        backgroundColor: '#e6f7ff',
+        borderColor: '#91d5ff'
+      }}
+    />
+  )}
 
             <Form.Item
               name="descriptionCompetence"
@@ -498,11 +593,15 @@ const codeCompetenceValidator = (_, value) => {
               <Input.TextArea rows={4} />
             </Form.Item>
           </Form>
+          
         </Modal>
+        
       </div>
+      
     </div>
   );
 }
 
 export default Competences;
+
 
