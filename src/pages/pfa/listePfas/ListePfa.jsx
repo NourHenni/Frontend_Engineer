@@ -59,6 +59,7 @@ function ListePfa() {
   const [sortByTeacher, setSortByTeacher] = useState(false);
   const [selectedTechnology, setSelectedTechnology] = useState(""); // Nouveau état pour la technologie sélectionnée
   const [technologiesList, setTechnologiesList] = useState([]);
+  const [hasPublishedPfas, setHasPublishedPfas] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -239,15 +240,17 @@ function ListePfa() {
   const maskedfas = async () => {
     try {
       const responseMessage = await maqsuedPfas();
-      console.log("responseMessage", responseMessage); // Pour vérifier ce que contient la réponse
 
-      message.success(responseMessage); // Afficher le message de succès
+      if (responseMessage) {
+        //  message.success(responseMessage);
+      } // Afficher le message de succès
 
       const updatedPfas = await fetchPfas(); // Mettre à jour avec les nouvelles données
       setDataPfas(updatedPfas);
       setLoading(false);
     } catch (error) {
-      const errorMessage = error.message || "Une erreur est survenue"; // Utilisez `error.message` pour un message d'erreur personnalisé
+      const errorMessage =
+        error?.response?.data?.message || "Une erreur est survenue";
       message.error(errorMessage);
       setLoading(false);
     }
