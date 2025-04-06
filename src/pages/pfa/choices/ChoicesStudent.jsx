@@ -1,63 +1,74 @@
 import React, { useEffect, useState } from "react";
 import { Form, Typography, Input, Select, message, Spin } from "antd";
 import FormModal from "../../../components/modals/FormModal";
-import { submitPfaChoices } from "../../../services/pfaServices";
-import axios from "axios";
+//import { getPfaDetails, updatePfaChoices } from "../../../services/pfaServices"; // Services pour récupérer et mettre à jour les données
+//import axios from "axios";
 
-const { Title } = Typography;
+//const { Title } = Typography;
 
-const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
+const PfaUpdateForm = ({ isModalOpen, setIsModalOpen, title, pfaId }) => {
   const [form] = Form.useForm();
   const [pfaOptions, setPfaOptions] = useState([]); // Stocker les options de PFA
   const [loading, setLoading] = useState(true); // Indicateur de chargement
   const [error, setError] = useState(null); // Pour afficher une erreur
   const [students, setStudents] = useState([]); // Liste des étudiants
+  const [pfaData, setPfaData] = useState(null); // Données actuelles du PFA
 
   const currentYear = new Date().getFullYear();
   const pfaPrefix = `PFA${currentYear}-`;
 
   // Fonction pour récupérer les codes PFA publiés
-  useEffect(() => {
-    const fetchPfaOptions = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/pfa/publishedCode",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        console.log(response.data.codes);
-        setPfaOptions(response.data.codes); // Récupérer les codes PFA
-        setLoading(false);
-      } catch (error) {
-        setError("Erreur lors de la récupération des sujets PFA.");
-        setLoading(false);
-      }
-    };
+  //   useEffect(() => {
+  //     const fetchPfaOptions = async () => {
+  //       try {
+  //         const response = await axios.get(
+  //           "http://localhost:5000/pfa/publishedCode",
+  //           {
+  //             headers: {
+  //               Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //             },
+  //           }
+  //         );
+  //         setPfaOptions(response.data.codes); // Récupérer les codes PFA
+  //       } catch (error) {
+  //         setError("Erreur lors de la récupération des sujets PFA.");
+  //       }
+  //     };
 
-    const fetchStudents = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/pfa/studentsPfas",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        console.log("response", response);
-        const students = response.data.users; // Liste des étudiants
-        setStudents(students);
-      } catch (error) {
-        console.error("Erreur", error);
-      }
-    };
+  //     const fetchStudents = async () => {
+  //       try {
+  //         const response = await axios.get(
+  //           "http://localhost:5000/pfa/studentsPfas",
+  //           {
+  //             headers: {
+  //               Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //             },
+  //           }
+  //         );
+  //         const students = response.data.users; // Liste des étudiants
+  //         setStudents(students);
+  //       } catch (error) {
+  //         console.error("Erreur", error);
+  //       }
+  //     };
 
-    fetchPfaOptions();
-    fetchStudents();
-  }, []);
+  //     const fetchPfaData = async () => {
+  //       try {
+  //         const response = await getPfaDetails(pfaId); // Récupère les données du PFA
+  //         setPfaData(response.data);
+  //         form.setFieldsValue(response.data); // Remplir le formulaire avec les données existantes
+  //       } catch (error) {
+  //         message.error("Erreur lors de la récupération des données du PFA.");
+  //       }
+  //     };
+
+  //     fetchPfaOptions();
+  //     fetchStudents();
+  //     if (pfaId) {
+  //       fetchPfaData(); // Récupérer les données spécifiques au PFA
+  //     }
+  //     setLoading(false);
+  //   }, [pfaId]);
 
   // Validation des doublons
   const validateUniquePriority = (_, value, allValues) => {
@@ -193,12 +204,12 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
     };
 
     try {
-      const result = await submitPfaChoices(payload);
-      message.success(result.message || "Soumission réussie !");
+      const result = await updatePfaChoices(pfaId, payload); // Mettre à jour les choix du PFA
+      message.success(result.message || "Mise à jour réussie !");
       setIsModalOpen(false);
       form.resetFields();
     } catch (error) {
-      message.error(error.message || "Erreur lors de la soumission.");
+      message.error(error.message || "Erreur lors de la mise à jour.");
     }
   };
 
@@ -220,4 +231,4 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
   );
 };
 
-export default PfaSelectionForm;
+export default PfaUpdateForm;

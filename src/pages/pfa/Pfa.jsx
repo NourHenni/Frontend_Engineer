@@ -58,7 +58,7 @@ function Pfa() {
     setIsModalOpen(false);
   };
 
-  const onUpdateEmailTemplate = (info) => {
+  const onUpdatePeriod = (info) => {
     setIsUpdateModalOpen(true); // Ouvre le modal de mise à jour
     setIsConsulting(false);
     setIsModifying(true);
@@ -147,7 +147,7 @@ function Pfa() {
         return (
           <div className="actions">
             <Space>
-              <a onClick={() => onUpdateEmailTemplate(record)} className="mr-4">
+              <a onClick={() => onUpdatePeriod(record)} className="mr-4">
                 Modifier la période
               </a>
               <a onClick={handleNavigate}>Consulter les sujets PFAs</a>
@@ -207,11 +207,3 @@ function Pfa() {
 }
 
 export default Pfa;
-
-{
-  /* <Space size="middle">
-<a onClick={showModal}>Modifier la période {record.name}</a>
-
-<a onClick={handleNavigate}>Consulter les sujets PFAs</a>
-</Space> */
-}
