@@ -12,7 +12,7 @@ import "./Sidebar.css";
 
 function SidebarLayout({ collapsed, setCollapsed }) {
   const [userRole, setUserRole] = useState(null);
-
+  const location = useLocation();
   // Decode the token to extract the role
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -54,21 +54,21 @@ function SidebarLayout({ collapsed, setCollapsed }) {
       key: "pfa",
       icon: <img src={pfa} style={{ width: 30, height: 30 }} />,
       route: "/home/PFA",
-      requiredRoles: ["admin", "enseignant", "etudiant"], 
+      requiredRoles: ["admin", "enseignant", "etudiant"],
     },
     {
       label: "Stages d'été",
       key: "stageEte",
       icon: <img src={ete} style={{ width: 30, height: 30 }} />,
       route: "/home/StageEte",
-      requiredRoles: ["admin", "enseignant", "etudiant"], 
+      requiredRoles: ["admin", "enseignant", "etudiant"],
     },
     {
       label: "Matières",
       key: "matieres",
       icon: <img src={matiere} style={{ width: 30, height: 30 }} />,
       route: "/home/Matieres",
-      requiredRoles: ["admin", "enseignant", "etudiant"], 
+      requiredRoles: ["admin", "enseignant", "etudiant"],
     },
     {
       label: "Compétences",
@@ -78,7 +78,6 @@ function SidebarLayout({ collapsed, setCollapsed }) {
       requiredRoles: ["admin", "enseignant", "etudiant"],
     },
   ];
-  
 
   return (
     <Sider
@@ -96,17 +95,15 @@ function SidebarLayout({ collapsed, setCollapsed }) {
       />
 
       {/* Sidebar Menu */}
-      <Menu mode="inline" className="menu">
-      {MenuItems.filter(item => {
-  return !item.requiredRoles || item.requiredRoles.includes(userRole);
-}).map(item => (
-  <Menu.Item key={item.key} icon={item.icon}>
-    <Link to={item.route}>{item.label}</Link>
-  </Menu.Item>
-))}
-
+      <Menu mode="inline" className="menu" selectedKeys={[location.pathname]}>
+        {MenuItems.filter((item) => {
+          return !item.requiredRoles || item.requiredRoles.includes(userRole);
+        }).map((item) => (
+          <Menu.Item key={item.key} icon={item.icon}>
+            <Link to={item.route}>{item.label}</Link>
+          </Menu.Item>
+        ))}
       </Menu>
-
     </Sider>
   );
 }

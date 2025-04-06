@@ -34,7 +34,6 @@ function Pfa() {
     const loadPeriods = async () => {
       const data = await fetchPeriod();
       setPeriods(data); // Mettre à jour l'état avec les données récupérées
-      console.log(periods);
 
       setLoading(false);
     };
@@ -66,7 +65,6 @@ function Pfa() {
 
     // Chercher la période à modifier dans la liste des périodes
     const periodData = periods.find((period) => period.id === info.id);
-    console.log("period.id", periodData);
 
     if (periodData) {
       // Pré-remplir les champs du formulaire de mise à jour
@@ -162,7 +160,7 @@ function Pfa() {
     <div>
       <Navbar />
       <SidebarLayout />
-      <div className="table-container">
+      <div className="table">
         <div className="table-header">
           <h2>Liste des périodes</h2>
           <ButtonModel

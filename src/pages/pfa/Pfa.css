@@ -5,6 +5,19 @@
     height: 300px; /* adapte selon la hauteur que tu veux */
   }
   
+  .table {
+    position: relative;
+    top: 50px;
+    width: 100%;
+    max-width: 1200px;
+    margin-left: 80px;
+    margin-right: 10px;
+    overflow-x: auto;
+    padding: 21px 10px 16px 10px;
+    background: #fff;
+    border: 1px solid #ccc;
+}
+
 
 
 /* En-tête contenant le titre et le bouton */
