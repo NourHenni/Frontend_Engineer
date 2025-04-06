@@ -4,11 +4,12 @@ import { UserContext } from "../App";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
-  const user = useContext(UserContext);
   //const location = useLocation();
+  const user = useContext(UserContext);
 
   if (!token || !user) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/" />;
+
   }
 
   return children;

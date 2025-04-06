@@ -24,7 +24,10 @@ const LoginPage = () => {
         window.location.href = "/home"; // Solution temporaire
       }
     } catch (error) {
-      message.error("Identifiants incorrects");
+      console.error("Error during login:", error);
+      message.error("CIN ou Password incorrecte");
+    } finally {
+      setLoading(false);
     }
   };
 
