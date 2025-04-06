@@ -50,6 +50,7 @@ const Matieres = () => {
           })
         ]);
 
+
         setState(prev => ({
           ...prev,
           data: matieresRes.data.map(item => ({
@@ -61,6 +62,7 @@ const Matieres = () => {
           loading: false
         }));
 
+
       } catch (err) {
         setState(prev => ({ ...prev, error: err.message, loading: false }));
       }
@@ -69,12 +71,70 @@ const Matieres = () => {
     fetchData();
   }, []);
 
+  const handleUpdateAvancement = async (matiereId, chapitreIndex, sectionIndex, nouveauStatut) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.patch(
+      `http://localhost:5000/matieres/${matiereId}/avancement`,
+      {
+        chapitreIndex,
+        sectionIndex, 
+        nouveauStatut: nouveauStatut
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+  setState(prev => ({
+      ...prev,
+      data: prev.data.map(matiere => {
+        if (matiere._id === matiereId) {
+          const updatedCurriculum = [...matiere.Curriculum];
+          updatedCurriculum[chapitreIndex].sections[sectionIndex].AvancementSection = nouveauStatut;
+          
+          if (nouveauStatut === 'Terminee') {
+            updatedCurriculum[chapitreIndex].sections[sectionIndex].dateFinSection = new Date();
+          } else {
+            updatedCurriculum[chapitreIndex].sections[sectionIndex].dateFinSection = null;
+          }
+
+          return {
+            ...matiere,
+            Curriculum: updatedCurriculum
+          };
+        }
+        return matiere;
+      })
+    }));
+
+    message.success({
+  content: 'Statut mis à jour avec succès & Notification Envoyée',
+  duration: 4.5,
+});
+  } catch (err) {
+    message.error(err.response?.data?.message || 'Erreur de mise à jour');
+  }
+};
+const handleEditCurriculum = (record) => {
+  setState(prev => ({ 
+    ...prev, 
+    selectedMatiere: record, 
+    isModalOpen: true 
+  }));
+  form.setFieldsValue({
+     ...record,
+    Curriculum: record.Curriculum || []
+  });
+};
+
   // Configuration des colonnes du tableau
   const columns = [
     {
       title: 'Code',
       dataIndex: 'CodeMatiere',
       key: 'CodeMatiere',
+
     },
     {
       title: 'Nom',
@@ -82,12 +142,16 @@ const Matieres = () => {
       key: 'Nom',
     },
     {
+
       title: 'Statut',
       key: 'status',
       render: (_, record) => (
         <Space>
           <Tag color={record.publiee ? 'green' : 'volcano'}>
+
+
             {record.publiee ? 'Publiée' : 'Masquée'}
+
           </Tag>
           <Tag color={record.archived ? 'red' : 'blue'}>
             {record.archived ? 'Archivée' : 'Active'}
@@ -101,6 +165,13 @@ const Matieres = () => {
       render: (_, record) => (
         <Space>
           <Button onClick={() => showDetails(record)}>Consulter</Button>
+
+          {userRole === 'enseignant' && (
+        <Button onClick={() => handleEditCurriculum(record)}>
+          Modifier Curriculum
+        </Button>
+      )}
+
           {userRole === 'admin' && (
             <>
               <Button onClick={() => handleEdit(record)}>Modifier</Button>
@@ -116,7 +187,10 @@ const Matieres = () => {
                 icon={record.publiee ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
                 onClick={() => togglePublish(record)}
               >
+
+
                 {record.publiee ? 'Masquer' : 'Publier'}
+
               </Button>
             </>
           )}
@@ -158,6 +232,7 @@ const Matieres = () => {
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       ));
@@ -188,6 +263,7 @@ const Matieres = () => {
             {renderCurriculum()}
           </div>
         </div>
+
       )
     });
   };
@@ -244,8 +320,26 @@ const Matieres = () => {
 
   // Soumission du formulaire
   const handleSubmit = async (values) => {
+
+    let payload;
     try {
-      const payload = {
+        if (userRole === 'enseignant') {
+      // Pour les enseignants, ne mettre à jour que le curriculum
+      payload = {
+        Curriculum: values.Curriculum?.map(chapitre => ({
+          ...chapitre,
+          sections: chapitre.sections?.map(section => ({
+            ...section,
+            dateFinSection: section.AvancementSection === 'Terminee' 
+              ? new Date().toISOString() 
+              : null
+          })) || []
+        })) || []
+      };
+    }else {
+      // Pour les admins, logique normale avec tous les champs
+      payload = {
+
         ...values,
         CoeffGroupeModule: Number(values.CoeffGroupeModule),
         Coefficient: Number(values.Coefficient),
@@ -268,6 +362,8 @@ const Matieres = () => {
         })) || []
       };
 
+    }
+
       const token = localStorage.getItem('token');
       const method = selectedMatiere ? 'patch' : 'post';
       const url = selectedMatiere 
@@ -278,13 +374,27 @@ const Matieres = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setState(prev => ({
-        ...prev,
-        data: selectedMatiere 
-          ? prev.data.map(item => item._id === selectedMatiere._id ? responseData : item) 
-          : [...prev.data, responseData],
-        isModalOpen: false
-      }));
+        const [matieresRes, competencesRes] = await Promise.all([
+          axios.get('http://localhost:5000/matieres', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get('http://localhost:5000/Competences', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+     setState(prev => ({
+          ...prev,
+          data: matieresRes.data.map(item => ({
+            ...item,
+            key: item._id,
+            competences: item.competences || []
+          })),
+          competences: competencesRes.data,
+          loading: false,
+          isModalOpen: false
+        }));
+
+
 
       message.success(`Matière ${selectedMatiere ? 'modifiée' : 'créée'} avec succès`);
     } catch (err) {
@@ -292,17 +402,62 @@ const Matieres = () => {
     }
   };
 
+const handleStatusChange = async (newStatus, chapitreIndex, sectionIndex, matiereId) => {
+  try {
+    // Optimistic UI update
+    const updatedData = data.map(matiere => {
+      if (matiere._id === matiereId) {
+        const updatedCurriculum = [...matiere.Curriculum];
+        updatedCurriculum[chapitreIndex].sections[sectionIndex] = {
+          ...updatedCurriculum[chapitreIndex].sections[sectionIndex],
+          AvancementSection: newStatus,
+          dateFinSection: newStatus === 'Terminee' ? new Date().toISOString() : null
+        };
+        
+        return { ...matiere, Curriculum: updatedCurriculum };
+      }
+      return matiere;
+    });
+
+    setState(prev => ({ ...prev, data: updatedData }));
+
+    // API call
+    const token = localStorage.getItem('token');
+    await axios.patch(
+      `http://localhost:5000/matieres/${matiereId}/avancement`,
+      {
+        chapitreIndex,
+        sectionIndex,
+        nouveauStatut: newStatus
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    message.success('Statut mis à jour avec succès');
+  } catch (err) {
+    // Revert on error
+    setState(prev => ({ ...prev }));
+    message.error(err.response?.data?.message || 'Erreur de mise à jour');
+  }
+};
   // Rendu du formulaire
   const renderFormFields = () => (
+   //  const isEnseignant = userRole === 'enseignant';
+
     <>
+        <>
+
       {/* Section Informations de base */}
       <div className="form-section">
         <Form.Item
           name="CodeMatiere"
           label="Code matière"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
-        >
-          <Input placeholder="Ex: MTH101" />
+
+          <Input placeholder="Ex: MTH101" disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -310,7 +465,9 @@ const Matieres = () => {
           label="Nom de la matière"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
         >
-          <Input placeholder="Ex: Mathématiques appliquées" />
+
+          <Input placeholder="Ex: Mathématiques appliquées"  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -318,7 +475,9 @@ const Matieres = () => {
           label="Groupe de module"
           rules={[{ required: true, message: 'Champ obligatoire' }]}
         >
-          <Input placeholder="Ex: GM1" />
+
+          <Input placeholder="Ex: GM1"  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
       </div>
 
@@ -334,7 +493,9 @@ const Matieres = () => {
             message: 'Doit être un nombre positif'
           }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -346,8 +507,9 @@ const Matieres = () => {
             min: 0,
             message: 'Doit être un nombre positif'
           }]}
-        >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
       </div>
 
@@ -363,7 +525,9 @@ const Matieres = () => {
             message: 'Doit être un nombre positif'
           }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
 
         <Form.Item
@@ -371,7 +535,8 @@ const Matieres = () => {
           label="Heures de cours"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -379,7 +544,9 @@ const Matieres = () => {
           label="Heures de TD"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
 
         <Form.Item
@@ -387,7 +554,9 @@ const Matieres = () => {
           label="Heures de TP"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
       </div>
 
@@ -398,7 +567,9 @@ const Matieres = () => {
           label="Niveau"
           rules={[{ required: true, message: 'Sélection obligatoire' }]}
         >
-          <Select>
+
+          <Select disabled={userRole === 'enseignant'} >
+
             <Option value="1ING">1ère année</Option>
             <Option value="2ING">2ème année</Option>
             <Option value="3ING">3ème année</Option>
@@ -410,7 +581,9 @@ const Matieres = () => {
           label="Semestre"
           rules={[{ required: true, message: 'Sélectionnez un semestre' }]}
         >
-          <Select>
+
+          <Select  disabled={userRole === 'enseignant'} >
+
             <Option value="S1">S1</Option>
             <Option value="S2">S2</Option>
             <Option value="S3">S3</Option>
@@ -430,7 +603,9 @@ const Matieres = () => {
             message: 'Année entre 2000 et 2100'
           }]}
         >
-          <InputNumber style={{ width: '100%' }} />
+
+          <InputNumber style={{ width: '100%' }}  disabled={userRole === 'enseignant'} />
+
         </Form.Item>
 
         <Form.Item
@@ -438,7 +613,9 @@ const Matieres = () => {
           label="Crédits"
           rules={[{ required: true, type: 'number', min: 0 }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+
+          <InputNumber min={0} style={{ width: '100%' }} disabled={userRole === 'enseignant'}  />
+
         </Form.Item>
       </div>
 
@@ -449,7 +626,9 @@ const Matieres = () => {
           label="Compétences associées"
           rules={[{ required: true, message: 'Sélection obligatoire' }]}
         >
-          <Select
+
+          <Select  disabled={userRole === 'enseignant'} 
+
             mode="multiple"
             showSearch
             optionFilterProp="children"
@@ -468,18 +647,21 @@ const Matieres = () => {
           label="Publication"
           valuePropName="checked"
         >
-          <Switch
+
+          <Switch  disabled={userRole === 'enseignant'} 
             checkedChildren="Publiée"
-            unCheckedChildren="Masquée"
+            unCheckedChildren="Brouillon"
           />
         </Form.Item>
       </div>
-
+  </>
+     
       {/* Section Curriculum */}
-      <Form.Item
+      <Form.Item  disabled={userRole === 'enseignant'} 
         label="Curriculum"
         required
-        rules={[{ required: true, message: 'Le curriculum est obligatoire' }]}
+        rules={[{ required:false, message: 'Le curriculum est obligatoire' }]}
+
       >
         <Form.List name="Curriculum">
     {(chapitres, { add: addChapitre, remove: removeChapitre }) => (
@@ -493,6 +675,7 @@ const Matieres = () => {
               rules={[{ required: true, message: 'Titre obligatoire' }]}
             >
               <Input placeholder="Introduction à..." />
+
             </Form.Item>
 
             <Form.Item
@@ -507,6 +690,7 @@ const Matieres = () => {
                 <Select.Option value="Terminee">Terminé</Select.Option>
               </Select>
             </Form.Item>
+
 
             <Form.List name={[chapitreName, 'sections']}>
               {(sections, { add: addSection, remove: removeSection }) => (
@@ -537,7 +721,16 @@ const Matieres = () => {
                         label="Statut"
                         rules={[{ required: true }]}
                       >
-                        <Select>
+
+                        <Select  onChange={(value) => {
+      handleStatusChange(
+        value, 
+        chapitreName, // index du chapitre
+        sectionName,  // index de la section
+        selectedMatiere._id
+      );
+    }}>
+
                           <Select.Option value="NonCommencee">Non commencé</Select.Option>
                           <Select.Option value="EnCours">En cours</Select.Option>
                           <Select.Option value="Terminee">Terminé</Select.Option>
@@ -582,7 +775,9 @@ const Matieres = () => {
         
       </Form.Item>
     </>
-  );
+
+);
+
 
   return (
     <div className="matieres-page">
@@ -651,5 +846,6 @@ const Matieres = () => {
   );
 };
 
-export default Matieres;
+
+export default Matieres;    
 
