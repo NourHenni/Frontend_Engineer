@@ -283,7 +283,7 @@ function StudentTable() {
             columns={columns}
             dataSource={filteredData}
             rowKey="_id"
-            pagination={{ pageSize: 10 }}
+            pagination={{ pageSize: 20 }}
             bordered
             scroll={{ y: "calc(100vh - 250px)" }}
             size="small"
