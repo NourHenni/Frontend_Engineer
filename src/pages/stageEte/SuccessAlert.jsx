@@ -32,6 +32,9 @@ import './SuccessAlert.css';
           subTitle={
             <>
               Votre sujet "{stageDetails.titreSujet}" pour {stageDetails.nomEntreprise} a bien été enregistré.
+              <p>Niveau : <strong>{stageDetails.niveau}</strong> <br />
+              Année : <strong>{stageDetails.anneeStage}</strong>
+</p>
               <div className="success-details">
                 <p><FilePdfOutlined /> Référence: {stageDetails.reference}</p>
               </div>

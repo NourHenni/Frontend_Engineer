@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Table, Select, Tag, message, Spin } from "antd";
-import { getInternshipsByType } from "../../services/stageServices";
+import { Table, Select, Tag, message, Spin, Button,
+    Modal,
+    Checkbox, } from "antd";
+import { getInternshipsByType, assignTeachersToStages,
+    getEnseignants, } from "../../services/stageServices";
 
 const { Option } = Select;
 
@@ -8,6 +11,9 @@ function ListeStages() {
   const [niveau, setNiveau] = useState("premiereannee");
   const [loading, setLoading] = useState(false);
   const [stages, setStages] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [teacherList, setTeacherList] = useState([]);
+  const [selectedTeachers, setSelectedTeachers] = useState([]);
 
   useEffect(() => {
     fetchStages(niveau);
@@ -23,6 +29,31 @@ function ListeStages() {
       message.error(err.message || "Erreur lors du chargement.");
     } finally {
       setLoading(false);
+    }
+  };
+  const fetchTeachers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await getEnseignants(token);
+      setTeacherList(response.data);
+    } catch (error) {
+      message.error("Erreur lors du chargement des enseignants.");
+    }
+  };
+  const handleAffectation = async () => {
+    if (selectedTeachers.length === 0) {
+      return message.warning("Veuillez sélectionner au moins un enseignant.");
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await assignTeachersToStages(niveau, selectedTeachers, token);
+      message.success("Affectation réussie !");
+      setIsModalVisible(false);
+      setSelectedTeachers([]);
+      fetchStages(niveau); // Rafraîchir la table
+    } catch (err) {
+      message.error("Erreur lors de l'affectation.");
     }
   };
 
@@ -106,6 +137,14 @@ function ListeStages() {
         <Option value="deuxiemeannee">Deuxième Année</Option>
       </Select>
 
+      <Button
+          type="primary"
+          onClick={() => {
+            setIsModalVisible(true);
+            fetchTeachers();
+          }}
+        ></Button>
+
       {loading ? (
         <div style={{ textAlign: "center", marginTop: 50 }}>
           <Spin size="large" />
@@ -119,6 +158,28 @@ function ListeStages() {
           pagination={{ pageSize: 6 }}
         />
       )}
+
+<Modal
+        title="Affecter les enseignants"
+        open={isModalVisible}
+        onOk={handleAffectation}
+        onCancel={() => setIsModalVisible(false)}
+        okText="Affecter"
+        cancelText="Annuler"
+      >
+        <Checkbox.Group
+          style={{ display: "flex", flexDirection: "column", maxHeight: 300, overflowY: "auto" }}
+          value={selectedTeachers}
+          onChange={setSelectedTeachers}
+        >
+          {teacherList.map((teacher) => (
+            <Checkbox key={teacher._id} value={teacher._id}>
+              {teacher.nom} {teacher.prenom} — {teacher.adresseEmail}
+            </Checkbox>
+          ))}
+        </Checkbox.Group>
+      </Modal>
+
     </div>
   );
 }

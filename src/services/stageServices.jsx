@@ -28,5 +28,22 @@ export const getInternshipsByType = async (type, token) => {
   return response.data;
 };
 
+export const getEnseignants = async (token) => {
+  return await axios.get(`http://localhost:5000/internship/teachers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const assignTeachersToStages = async (type, teacherIds, token) => {
+  return await axios.post(
+    `http://localhost:5000/internship/${type}/planning/assign`,
+    { teacherIds },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+};
+
+
 
   
