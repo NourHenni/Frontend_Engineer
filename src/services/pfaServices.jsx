@@ -160,16 +160,16 @@ export const addPfa = async (pfa) => {
 
 export const updatePfa = async (id, pfa) => {
   try {
+    console.log("id", id);
     const result = await axios.patch(
       `http://localhost:5000/pfa/${id}/mine`,
-      { pfa },
+      pfa,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Assurez-vous d'envoyer le token d'authentification si nécessaire
         },
       }
     );
-    console.log("idUSER", id);
     return result.data; // Retourner la réponse du serveur
   } catch (error) {
     console.error("Erreur dans la modification du pfa : ", error);

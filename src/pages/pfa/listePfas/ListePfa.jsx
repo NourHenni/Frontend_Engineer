@@ -22,11 +22,13 @@ import {
   Spin,
   Alert,
   Table,
+  Tag,
 } from "antd";
+
 import "./ListePfa.css";
 import AddPeriod from "../addPeriod/AddPeriod";
 import AddPfa from "../addPFA/AddPfa";
-import ChoicePfa from "../choicePFA/ChoicePfa";
+
 import PfaSelectionForm from "../choicePFA/ChoicePfa";
 import { UserContext } from "../../../App";
 import {
@@ -39,7 +41,6 @@ import {
 import axios from "axios";
 import UpdatePfa from "../updatePfa/UpdatePfa";
 import ChoicesModal from "../choicesModel/ChoiceModel";
-import ChoiceStudents from "../choices/ChoicesStudent";
 
 function ListePfa() {
   const user = useContext(UserContext);
@@ -60,7 +61,9 @@ function ListePfa() {
   const [selectedTechnology, setSelectedTechnology] = useState(""); // Nouveau état pour la technologie sélectionnée
   const [technologiesList, setTechnologiesList] = useState([]);
   const [hasPublishedPfas, setHasPublishedPfas] = useState(false);
-
+  const [selectedPfaId, setSelectedPfaId] = useState(null);
+  const [collapsed, setCollapsed] = useState(true);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -85,6 +88,10 @@ function ListePfa() {
         if (fetcher) {
           const result = await fetcher();
           setDataPfas(result);
+          console.log("result", result);
+          if (user.role === "etudiant" && (!result || result.length === 0)) {
+            message.info("Pas encore de sujets PFA publiés");
+          }
 
           // Extraire les technologies disponibles à partir des données
           const technologies = [
@@ -108,9 +115,13 @@ function ListePfa() {
     setDataPfas(data); // Mettre à jour l'état avec les données récupérées
   };
   const showModalChoice = () => {
-    setIsModalVisible(true);
+    setIsChoiceModalOpen(true);
   };
 
+  // Fonction pour fermer le modal de consultation des choix
+  const handleChoiceCancel = () => {
+    setIsChoiceModalOpen(false);
+  };
   // Fonction pour filtrer les PFA par technologie
   const handleTechnologyFilter = (value) => {
     setSelectedTechnology(value); // Mettre à jour la technologie sélectionnée
@@ -183,17 +194,17 @@ function ListePfa() {
     setIsConsulting(false);
     setIsModifying(true);
     setInfoPeriod(info);
+    console.log("info passé à onUpdatePfa", info);
 
-    // Chercher le sujet  à modifier dans la liste des périodes
-    const pfasdata = dataPfas.find((pfa) => pfa.id === info.id);
+    const pfasdata = dataPfas.find((pfa) => pfa._id === info._id);
     console.log("pfasdata", pfasdata);
     if (pfasdata) {
-      // Pré-remplir les champs du formulaire de mise à jour
+      setSelectedPfaId(pfasdata._id); // <<< ICI on enregistre l'ID !
       setFormData({
         titreSujet: pfasdata.titreSujet || "",
         description: pfasdata.description || "",
         technologies: pfasdata.technologies || [],
-        estBinome: pfasdata.estBinome || "oui",
+        estBinome: pfasdata.estBinome || false,
         etudiant1: pfasdata.etudiant1 || "",
         etudiant2: pfasdata.etudiant2 || "",
       });
@@ -373,9 +384,14 @@ function ListePfa() {
       render: (binome) => (binome ? "Oui" : "Non"),
     },
     {
-      title: "Etat Affectation",
+      title: "État Affectation",
       dataIndex: "etatAffectation",
       key: "etatAffectation",
+      render: (etat) => (
+        <Tag color={etat === "affected" ? "green" : "red"}>
+          {etat === "affected" ? "Affecté" : "Non affecté"}
+        </Tag>
+      ),
     },
   ];
 
@@ -435,14 +451,30 @@ function ListePfa() {
 
   if (user.role === "enseignant") {
     columns.splice(5, 0, {
-      title: "Etudiants",
-      dataIndex: "etudiant",
-      key: "etudiant",
+      title: "Étudiants",
+      dataIndex: "etudiants",
+      key: "etudiants",
+      render: (etudiants) => (
+        <>
+          {etudiants && etudiants.length > 0
+            ? etudiants.map((etudiant, index) => (
+                <div key={index}>
+                  {etudiant.nom} {etudiant.prenom}
+                </div>
+              ))
+            : null}
+        </>
+      ),
     });
     columns.splice(6, 0, {
-      title: "Etat Depot",
+      title: "État Dépôt",
       dataIndex: "etatDepot",
       key: "etatDepot",
+      render: (etat) => (
+        <Tag color={etat === "published" ? "green" : "default"}>
+          {etat === "published" ? "Publié" : "Non publié"}
+        </Tag>
+      ),
     });
     columns.push({
       title: "Actions",
@@ -456,11 +488,11 @@ function ListePfa() {
       ),
     });
   }
-
+  const [showMyChoicesModal, setShowMyChoicesModal] = useState(false);
   return (
     <div>
       <Navbar />
-      <SidebarLayout />
+      <SidebarLayout collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="table-container">
         <div className="table-header">
           <h3>Liste des sujets PFA</h3>
@@ -507,6 +539,7 @@ function ListePfa() {
                   style={{ width: 200 }}
                   onChange={handleTechnologyFilter}
                   value={selectedTechnology}
+                  className="custom-select" // Classe personnalisée
                 >
                   <Select.Option value="">
                     Toutes les technologies
@@ -524,9 +557,9 @@ function ListePfa() {
                   icon={<PlusOutlined />}
                 />
                 <ButtonModel
-                  text="Consulter mes choix "
-                  onClick={showModalChoice}
+                  text="Consulter mes choix"
                   icon={<EyeOutlined />}
+                  onClick={() => setShowMyChoicesModal(true)}
                 />
               </>
             ) : (
@@ -566,20 +599,14 @@ function ListePfa() {
           refreshMyData={refreshMyData}
         />
       )}
-      {user.role === "etudiant" && (
+      {user.role === "etudiant" && isModalOpen && (
         <PfaSelectionForm
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           title="Sélectionner 3 sujets PFA"
         />
       )}
-      {user.role === "etudiant" && (
-        <ChoiceStudents
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          title="Mes choix "
-        />
-      )}
+
       {/* Modale de consultation du sujet */}
       <Modal
         title="Détails du sujet"
@@ -630,10 +657,11 @@ function ListePfa() {
           isUpdateModalOpen={isUpdateModalOpen}
           setIsModalOpen={setIsUpdateModalOpen}
           title={"Mettre à jour un sujet pfa"}
-          formData={formData} // Passer formData au modal
-          setFormData={setFormData} // Passer la fonction setFormData au modal
+          formData={formData}
+          setFormData={setFormData}
           refreshMyData={refreshMyData}
           dataPfas={dataPfas}
+          selectedPfaId={selectedPfaId} // <<< Important !
         />
       )}
       {selectedRecord && (

@@ -49,7 +49,7 @@
     top: 50px;
     width: 100%;
     max-width: 1200px;
-    margin-left: 215px;
+    margin-left: 100px;
     margin-right: 10px;
     overflow-x: auto;
     padding: 21px 10px 16px 10px;
@@ -57,4 +57,50 @@
     border: 1px solid #ccc;
 }
 
-  
+  /* Conteneur du Select */
+/* Conteneur du Select */
+/* Conteneur du Select */
+.custom-select .ant-select-selector {
+  background-color: white; /* Fond blanc pour le Select */
+  color: black; /* Couleur du texte noir */
+  border-radius: 8px; /* Bords arrondis */
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 20px; /* Espacement à l'intérieur du Select */
+  border: 1px solid #0a91d1; /* Bordure bleue pour le Select */
+  transition: all 0.3s ease; /* Transition fluide pour les effets */
+  margin-top: 10px; /* Décale le Select de 10px vers le bas */
+}
+
+/* Autres styles (survol, focus, etc.) restent inchangés */
+
+
+/* Effet au survol */
+.custom-select .ant-select-selector:hover {
+  background-color: #f0f5ff; /* Légère couleur de fond au survol */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Ombre au survol */
+  transform: translateY(-2px); /* Effet de survol */
+}
+
+/* Effet de focus */
+.custom-select .ant-select-selector:focus {
+  outline: none; /* Supprimer l'effet de focus par défaut */
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.3); /* Effet de focus */
+}
+
+/* Contenu de la liste d'options */
+.custom-select .ant-select-item {
+  color: black; /* Couleur du texte des options (noir pour fond blanc) */
+}
+
+/* Option sélectionnée */
+.custom-select .ant-select-item-option-selected {
+  background-color: #0a91d1; /* Fond bleu pour l'option sélectionnée */
+  color: white; /* Couleur du texte de l'option sélectionnée (blanc) */
+}
+
+/* L'option au survol */
+.custom-select .ant-select-item-option:hover {
+  background-color: #40a9ff; /* Fond bleu clair au survol */
+  color: white; /* Texte blanc au survol */
+}
