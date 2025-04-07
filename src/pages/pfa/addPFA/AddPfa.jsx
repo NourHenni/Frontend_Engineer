@@ -64,30 +64,35 @@ function AddPfa({ isModalOpen, setIsModalOpen, title, refreshMyData }) {
 
   const handleSubmit = async (values) => {
     try {
-      let newPfa = {
+      // Créer l'objet PFA avec les IDs des étudiants
+      const newPfa = {
         titreSujet: values.titreSujet,
         description: values.description,
         technologies: values.technologies,
         estBinome: isChecked,
-        etudiant1: values.etudiant1,
-        etudiant2: values.etudiant2,
+        idEtudiant1: values.etudiant1,
+        idEtudiant2: values.etudiant2,
       };
 
+      // Effectuer la requête pour ajouter un PFA
       const response = await addPfa(newPfa);
+      console.log("response", response);
 
       if (response && response.message) {
-        message.success(response.message); // Affiche le message de succès
+        message.success(response.message);
         refreshMyData();
-        setIsModalOpen(false); // Fermer la modal
+        setIsModalOpen(false);
       } else {
-        message.error(response.message);
+        message.error(response.message || "Message vide du backend");
       }
     } catch (error) {
       console.error(
-        "Erreur lors de l'ajout de la période : ",
-        error.response ? error.response.data : error
+        "Erreur lors de l'ajout du PFA : ",
+        error.response?.data || error
       );
-      message.error("Une erreur s'est produite !");
+      const errorMessage =
+        error.response?.data?.message || "Une erreur s'est produite !";
+      message.error(errorMessage);
     }
   };
 
@@ -146,6 +151,7 @@ function AddPfa({ isModalOpen, setIsModalOpen, title, refreshMyData }) {
       label: "En Binôme ?",
       name: "estBinome",
       type: "checkbox",
+      rules: [{ required: true, message: "Champ requis !" }],
       onchange: handleChoiceChange,
       valuePropName: "checked", // Corrigé la valeur de "checked" au lieu de "isChecked"
       style: { marginBottom: 0 },
