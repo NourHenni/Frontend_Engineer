@@ -8,6 +8,8 @@ import {
   Button,
   Modal,
   Checkbox,
+  Card,
+  Typography
 } from "antd";
 import {
   getInternshipsByType,
@@ -16,6 +18,7 @@ import {
 } from "../../services/stageServices";
 
 const { Option } = Select;
+const { Title } = Typography;
 
 function ListeStages() {
   const [niveau, setNiveau] = useState("premiereannee");
@@ -35,8 +38,6 @@ function ListeStages() {
       const token = localStorage.getItem("token");
       const response = await getInternshipsByType(selectedType, token);
       setStages(response.data);
-      console.log("Réponse enseignants:", response.data);
-
     } catch (err) {
       message.error(err.message || "Erreur lors du chargement.");
     } finally {
@@ -48,7 +49,7 @@ function ListeStages() {
     try {
       const token = localStorage.getItem("token");
       const response = await getEnseignants(token);
-      setTeacherList(response.data.teachers);
+      setTeacherList(response.data.teachers || []);
     } catch (error) {
       message.error("Erreur lors du chargement des enseignants.");
     }
@@ -131,7 +132,7 @@ function ListeStages() {
       key: "documents",
       render: (fichiers) => (
         <div>
-          {Object.entries(fichiers).map(([nom, lien]) => (
+          {Object.entries(fichiers || {}).map(([nom, lien]) => (
             <div key={nom}>
               <a href={lien} target="_blank" rel="noopener noreferrer">
                 📄 {nom}
@@ -145,22 +146,30 @@ function ListeStages() {
 
   return (
     <div style={{ padding: "24px" }}>
-      <h2>Liste des Stages par Niveau</h2>
-      <Select value={niveau} onChange={setNiveau} style={{ width: 220, marginBottom: 20 }}>
-        <Option value="premiereannee">Première Année</Option>
-        <Option value="deuxiemeannee">Deuxième Année</Option>
-      </Select>
+      <Title level={2}>Gestion des stages d'été</Title>
+      <Title level={4}>Liste des Stages par Niveau</Title>
 
-      <Button
-        type="primary"
-        onClick={() => {
-          setIsModalVisible(true);
-          fetchTeachers();
-        }}
-        style={{ marginLeft: 16 }}
-      >
-        Affecter Enseignant
-      </Button>
+      <div style={{ marginBottom: 20 }}>
+        <Select 
+          value={niveau} 
+          onChange={setNiveau} 
+          style={{ width: 220 }}
+        >
+          <Option value="premiereannee">Première Année</Option>
+          <Option value="deuxiemeannee">Deuxième Année</Option>
+        </Select>
+
+        <Button
+          type="primary"
+          onClick={() => {
+            setIsModalVisible(true);
+            fetchTeachers();
+          }}
+          style={{ marginLeft: 16 }}
+        >
+          Affecter Enseignant
+        </Button>
+      </div>
 
       {loading ? (
         <div style={{ textAlign: "center", marginTop: 50 }}>
@@ -177,25 +186,43 @@ function ListeStages() {
       )}
 
       <Modal
-        title="Affecter les enseignants"
+        title={
+          <div>
+            <Title level={4}>Affectation automatique des stages aux enseignants</Title>
+            <div>Niveau de stage: {niveau === 'premiereannee' ? 'Première Année' : 'Deuxième Année'}</div>
+          </div>
+        }
         open={isModalVisible}
         onOk={handleAffectation}
-        onCancel={() => setIsModalVisible(false)}
-        okText="Affecter"
+        onCancel={() => {
+          setIsModalVisible(false);
+          setSelectedTeachers([]);
+        }}
+        okText="Valider l'affectation"
         cancelText="Annuler"
+        width={600}
       >
-        <Checkbox.Group
-          style={{ display: "flex", flexDirection: "column", maxHeight: 300, overflowY: "auto" }}
-          value={selectedTeachers}
-          onChange={setSelectedTeachers}
-        >
-          {Array.isArray(teacherList) &&
-            teacherList.map((teacher) => (
-              <Checkbox key={teacher._id} value={teacher._id}>
-                {teacher.nom} {teacher.prenom} — {teacher.adresseEmail}
-              </Checkbox>
-            ))}
-        </Checkbox.Group>
+        <Card bordered={false}>
+          <div style={{ marginBottom: 16 }}>
+            <strong>Enseignants disponibles ({teacherList.length})</strong>
+          </div>
+          
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            <Checkbox.Group
+              style={{ width: '100%' }}
+              value={selectedTeachers}
+              onChange={setSelectedTeachers}
+            >
+              {teacherList.map((teacher) => (
+                <div key={teacher._id} style={{ marginBottom: 8 }}>
+                  <Checkbox value={teacher._id}>
+                    {teacher.nom} {teacher.prenom}
+                  </Checkbox>
+                </div>
+              ))}
+            </Checkbox.Group>
+          </div>
+        </Card>
       </Modal>
     </div>
   );
