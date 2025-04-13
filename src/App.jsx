@@ -19,6 +19,8 @@ import Pfa from "./pages/pfa/Pfa";
 import ListePfa from "./pages/pfa/listePfas/ListePfa"
 import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
+import PlanningStages from "./pages/stageEte/PlanningStages";
+
 
 export const UserContext = createContext();
 
@@ -118,6 +120,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/planning-stages" element={<PlanningStages />} />
+
              
             </>
           )}
@@ -165,6 +169,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/planning-stages" element={<PlanningStages />} />
+
             </>
           )}
 
