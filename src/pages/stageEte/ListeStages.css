@@ -1,0 +1,66 @@
+/* Styles globaux */
+.custom-button {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  .custom-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .custom-select .ant-select-selector {
+    border-radius: 6px !important;
+  }
+  
+  .custom-table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .custom-table .ant-table-thead > tr > th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .custom-table .ant-table-tbody > tr:hover > td {
+    background-color: #f1f3f5 !important;
+  }
+  
+  .custom-pagination .ant-pagination-item-active {
+    border-color: #1890ff;
+    font-weight: 500;
+  }
+  
+  .custom-pagination .ant-pagination-item-active a {
+    color: #1890ff;
+  }
+  
+  .custom-modal .ant-modal-content {
+    border-radius: 8px;
+  }
+  
+  .custom-modal .ant-modal-header {
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .custom-input {
+    border-radius: 6px;
+  }
+  
+  .custom-checkbox .ant-checkbox-inner {
+    border-radius: 4px;
+  }
+  
+  /* Animation de chargement */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .custom-table {
+    animation: fadeIn 0.5s ease;
+  }

@@ -131,11 +131,14 @@ function AddPeriod({
       value: formData.select,
       onChange: handleInputChange,
       options: [
-        { value: "PFA Project", label: "PFA Project" },
-        { value: "PFA CHOICE", label: "PFA CHOICE" },
+        ...(source === "periode"
+          ? [{ value: "PFA Project", label: "PFA Project" }]
+          : [{ value: "PFA CHOICE", label: "PFA CHOICE" }]),
+        { value: "Summer Internship", label: "Summer Internship" },
       ],
       rules: [{ required: true, message: "Veuillez choisir le type !" }],
-    },
+    }
+    
   ];
 
   return (

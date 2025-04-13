@@ -1,16 +1,6 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  Form,
-  Input,
-  Checkbox,
-  Button,
-  Radio,
-  Upload,
-  Select,
-  DatePicker,
-} from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import { Modal, Form, Input, Checkbox, Radio, Select, DatePicker, Upload, Button } from "antd";
+import { PlusOutlined, MinusCircleOutlined, UploadOutlined } from "@ant-design/icons";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -21,9 +11,17 @@ function FormModal({
   formFields = [],
   title,
   onSubmit,
+  formData,
 }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  // Utilisation de useEffect pour initialiser les valeurs du formulaire
+  useEffect(() => {
+    if (isModalOpen) {
+      form.setFieldsValue(formData); // Remplir le formulaire avec formData
+    }
+  }, [isModalOpen, formData, form]);
 
   const handleOk = () => {
     setLoading(true);
@@ -69,7 +67,6 @@ function FormModal({
               label={field.label}
               name={field.name}
               rules={field.rules}
-              valuePropName={field.type === "checkbox" ? "checked" : undefined}
             >
               {field.type === "input" && <Input />}
               {field.type === "textarea" && <TextArea rows={4} />}
@@ -86,6 +83,7 @@ function FormModal({
                   <Checkbox onChange={field.onchange}>Oui</Checkbox>
                 </Form.Item>
               )}
+
               {field.type === "radio" && (
                 <Radio.Group>
                   {field.options?.map((option) => (
@@ -105,26 +103,8 @@ function FormModal({
                 </Select>
               )}
               {field.type === "date" && <DatePicker />}
-              {field.type === "rangeDate" && <RangePicker />}
-              {field.type === "upload" && (
-                <Form.Item
-                  name={field.name}
-                  valuePropName="fileList"
-                  getValueFromEvent={(e) => {
-                    if (Array.isArray(e)) {
-                      return e;
-                    }
-                    return e?.fileList;
-                  }}
-                  noStyle
-                  rules={field.rules}
-                >
-                  <Upload beforeUpload={() => false}>
-                    <Button icon={<UploadOutlined />}>
-                      Téléverser {field.label}
-                    </Button>
-                  </Upload>
-                </Form.Item>
+              {field.type === "rangeDate" && (
+                <RangePicker format="YYYY-MM-DD" />
               )}
               {field.type === "inputChoice" && (
                 <Input
@@ -149,6 +129,26 @@ function FormModal({
                     </Select.Option>
                   ))}
                 </Select>
+              )}
+              {field.type === "upload" && (
+                <Form.Item
+                  name={field.name}
+                  valuePropName="fileList"
+                  getValueFromEvent={(e) => {
+                    if (Array.isArray(e)) {
+                      return e;
+                    }
+                    return e?.fileList;
+                  }}
+                  noStyle
+                  rules={field.rules}
+                >
+                  <Upload beforeUpload={() => false}>
+                    <Button icon={<UploadOutlined />}>
+                      Téléverser {field.label}
+                    </Button>
+                  </Upload>
+                </Form.Item>
               )}
               {field.type === "tags" && (
                 <Select
