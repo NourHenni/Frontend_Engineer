@@ -94,7 +94,7 @@ function AddPeriod({
         error.response.data &&
         error.response.data.message
       ) {
-        message.error(error.response.data.message); // Affiche le message d'erreur retourné par le serveur
+        message.error(error.response.data.message);
       } else {
         message.error("Une erreur s'est produite !");
       }
@@ -134,11 +134,9 @@ function AddPeriod({
         ...(source === "periode"
           ? [{ value: "PFA Project", label: "PFA Project" }]
           : [{ value: "PFA CHOICE", label: "PFA CHOICE" }]),
-        { value: "Summer Internship", label: "Summer Internship" },
       ],
       rules: [{ required: true, message: "Veuillez choisir le type !" }],
-    }
-    
+    },
   ];
 
   return (
