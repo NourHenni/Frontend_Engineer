@@ -288,28 +288,3 @@ export const sendAffectedEmail = async () => {
     throw error;
   }
 };
-
-export const manuelAssignment = async () => {
-  try {
-    const response = await axios.patch(
-      `http://localhost:5000/pfa/${pfaId}/assign/student/${studentId}/${secondStudentId}?`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      }
-    );
-
-    // Affichage ou retour des données du backend
-    console.log("Réponse du serveur :", response.data);
-
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Erreur lors de l'affectation automatique :",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
