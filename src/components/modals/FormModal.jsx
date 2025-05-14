@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Checkbox, Radio, Select, DatePicker, Upload, Button } from "antd";
-import { PlusOutlined, MinusCircleOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  Modal,
+  Form,
+  Input,
+  Checkbox,
+  Radio,
+  Select,
+  DatePicker,
+  Upload,
+  Button,
+} from "antd";
+import {
+  PlusOutlined,
+  MinusCircleOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
