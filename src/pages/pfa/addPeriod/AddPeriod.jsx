@@ -11,7 +11,6 @@ function AddPeriod({
   refreshData,
   source,
 }) {
-  console.log("source", source);
   const [formData, setFormData] = useState({
     name: "",
     date: [],
@@ -131,10 +130,11 @@ function AddPeriod({
       value: formData.select,
       onChange: handleInputChange,
       options: [
-        ...(source === "periode"
-          ? [{ value: "PFA Project", label: "PFA Project" }]
-          : [{ value: "PFA CHOICE", label: "PFA CHOICE" }]),
+        source === "periode"
+          ? { value: "PFA Project", label: "PFA Project" }
+          : { value: "PFA CHOICE", label: "PFA CHOICE" },
       ],
+
       rules: [{ required: true, message: "Veuillez choisir le type !" }],
     },
   ];

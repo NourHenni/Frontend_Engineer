@@ -3,6 +3,7 @@ import ButtonModel from "../../../components/button/Button";
 import Navbar from "../../../components/navbar/Navbar";
 import SidebarLayout from "../../../components/sidebar/Sidebar";
 import TableData from "../../../components/table/TableData";
+import { useNavigate } from "react-router-dom";
 import {
   EyeOutlined,
   MailFilled,
@@ -43,13 +44,14 @@ import UpdatePfa from "../updatePfa/UpdatePfa";
 import ChoicesModal from "../choicesModel/ChoiceModel";
 
 function ListePfa() {
+  const navigate = useNavigate();
   const user = useContext(UserContext);
   const [dataPfas, setDataPfas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedSujet, setSelectedSujet] = useState(null);
-  const [limit, setLimit] = useState(4); // 👈 4 éléments par page
+  const [limit, setLimit] = useState(4); //
   const [currentPage, setCurrentPage] = useState(1);
   const [isModifying, setIsModifying] = useState(false);
   const [isConsulting, setIsConsulting] = useState(false);
@@ -248,12 +250,16 @@ function ListePfa() {
     }
   };
 
+  const handleNavigate = () => {
+    navigate("/home/listeAffectedPfa");
+  };
+
   const maskedfas = async () => {
     try {
       const responseMessage = await maqsuedPfas();
 
       if (responseMessage) {
-        //  message.success(responseMessage);
+        message.success(responseMessage);
       } // Afficher le message de succès
 
       const updatedPfas = await fetchPfas(); // Mettre à jour avec les nouvelles données
@@ -383,16 +389,6 @@ function ListePfa() {
       key: "estBinome",
       render: (binome) => (binome ? "Oui" : "Non"),
     },
-    {
-      title: "État Affectation",
-      dataIndex: "etatAffectation",
-      key: "etatAffectation",
-      render: (etat) => (
-        <Tag color={etat === "affected" ? "green" : "red"}>
-          {etat === "affected" ? "Affecté" : "Non affecté"}
-        </Tag>
-      ),
-    },
   ];
 
   if (user.role === "admin" || user.role === "etudiant") {
@@ -404,31 +400,52 @@ function ListePfa() {
     });
   }
 
-  if (user.role === "admin") {
-    columns.splice(6, 0, {
-      title: "Étudiants",
-      dataIndex: "etudiants",
-      key: "etudiants",
-      render: (etudiants) => (
-        <>
-          {etudiants && etudiants.length > 0
-            ? etudiants.map((etudiant, index) => (
-                <div key={index}>
-                  {etudiant.nom} {etudiant.prenom}
-                </div>
-              ))
-            : null}
-        </>
+  if (user.role === "enseignant" || user.role === "etudiant") {
+    columns.splice(7, 0, {
+      title: "État Affectation",
+      dataIndex: "etatAffectation",
+      key: "etatAffectation",
+      render: (etat) => (
+        <Tag
+          color={
+            etat === "affected" || etat === "published" || etat === "masked"
+              ? "green"
+              : "red"
+          }
+        >
+          {etat === "affected" || etat === "published" || etat === "masked"
+            ? "Affecté"
+            : "Non affecté"}
+        </Tag>
       ),
     });
+  }
 
-    columns.splice(6, 0, {
+  if (user.role === "admin") {
+    columns.splice(5, 0, {
       title: "Etat Depot",
       dataIndex: "etatDepot",
       key: "etatDepot",
       render: (text, record) => <EtatDepotDropdown record={record} />,
     });
-    // Ajout d'une action pour ouvrir une nouvelle table avec les choix
+    columns.splice(6, 0, {
+      title: "État Affectation",
+      dataIndex: "etatAffectation",
+      key: "etatAffectation",
+      render: (etat) => (
+        <Tag
+          color={
+            etat === "affected" || etat === "published" || etat === "masked"
+              ? "green"
+              : "red"
+          }
+        >
+          {etat === "affected" || etat === "published" || etat === "masked"
+            ? "Affecté"
+            : "Non affecté"}
+        </Tag>
+      ),
+    });
     columns.push({
       title: "Voir Choix",
       key: "voirChoix",
@@ -476,6 +493,7 @@ function ListePfa() {
         </Tag>
       ),
     });
+
     columns.push({
       title: "Actions",
       key: "action",
@@ -512,6 +530,11 @@ function ListePfa() {
                 text="Envoyer la liste actuelle"
                 onClick={sendPfas}
                 icon={<MailFilled />}
+              />
+              <ButtonModel
+                text="Consulter la liste d'affectation"
+                onClick={handleNavigate}
+                icon={<EyeOutlined />}
               />
             </>
           )}
@@ -578,8 +601,6 @@ function ListePfa() {
           loading={loading}
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
-
-          // Passer la fonction pour gérer la pagination
         />
       </div>
       {user.role === "admin" && (
