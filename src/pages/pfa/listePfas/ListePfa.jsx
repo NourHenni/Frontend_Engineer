@@ -33,6 +33,7 @@ import AddPfa from "../addPFA/AddPfa";
 import PfaSelectionForm from "../choicePFA/ChoicePfa";
 import { UserContext } from "../../../App";
 import {
+  fetchMyPfa,
   fetchMyPfas,
   fetchPfas,
   fetchPublishedPfas,
@@ -65,6 +66,7 @@ function ListePfa() {
   const [hasPublishedPfas, setHasPublishedPfas] = useState(false);
   const [selectedPfaId, setSelectedPfaId] = useState(null);
   const [collapsed, setCollapsed] = useState(true);
+  const [isAffected, setIsAffected] = useState(false);
   const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -78,7 +80,6 @@ function ListePfa() {
   const roleToFetcher = {
     admin: fetchPfas,
     enseignant: fetchMyPfas,
-    etudiant: fetchPublishedPfas,
   };
 
   // Fonction pour charger les données
@@ -86,22 +87,36 @@ function ListePfa() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetcher = roleToFetcher[user.role];
-        if (fetcher) {
-          const result = await fetcher();
-          setDataPfas(result);
-          console.log("result", result);
-          if (user.role === "etudiant" && (!result || result.length === 0)) {
-            message.info("Pas encore de sujets PFA publiés");
-          }
+        let result = [];
 
-          // Extraire les technologies disponibles à partir des données
-          const technologies = [
-            ...new Set(result.flatMap((pfa) => pfa.technologies)),
-          ];
-          setTechnologiesList(technologies);
-          console.log("technologies", technologies);
+        if (user.role === "etudiant") {
+          // Ici test si user.pfa existe et n'est pas null ou vide
+          if (user.pfa) {
+            // s'il y a un PFA assigné, on récupère uniquement celui-ci
+            result = await fetchMyPfa();
+          } else {
+            // sinon on récupère la liste des sujets publiés
+            result = await fetchPublishedPfas();
+          }
+        } else {
+          // Pour les autres rôles, on continue à utiliser roleToFetcher
+          const fetcher = roleToFetcher[user.role];
+          if (fetcher) {
+            result = await fetcher();
+          }
         }
+
+        setDataPfas(result);
+
+        if (user.role === "etudiant" && (!result || result.length === 0)) {
+          message.info("Pas encore de sujets PFA publiés");
+        }
+
+        // Extraire les technologies disponibles à partir des données
+        const technologies = [
+          ...new Set(result.flatMap((pfa) => pfa.technologies)),
+        ];
+        setTechnologiesList(technologies);
       } catch (e) {
         console.error("Erreur de chargement :", e);
       } finally {
@@ -110,7 +125,8 @@ function ListePfa() {
     };
 
     loadData();
-  }, [user.role]); // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
+  }, [user.role, user.pfa]);
+  // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
 
   const refreshData = async () => {
     const data = await fetchPfas();
@@ -137,11 +153,6 @@ function ListePfa() {
       // Si aucune technologie n'est sélectionnée, recharger toutes les données
       loadData();
     }
-  };
-
-  // Fonction pour gérer la pagination
-  const handlePaginationChangee = (page, pageSize) => {
-    // Mettre à jour la page courante et la taille de la page (implémenter votre logique de pagination)
   };
 
   // Fonction pour fermer le modal
@@ -252,6 +263,10 @@ function ListePfa() {
 
   const handleNavigate = () => {
     navigate("/home/listeAffectedPfa");
+  };
+
+  const handleNavigateSoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
   };
 
   const maskedfas = async () => {
@@ -369,6 +384,10 @@ function ListePfa() {
     });
   };
 
+  const handleNavigateMySoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
+  };
+
   const columns = [
     { title: "Code PFA", dataIndex: "code_pfa", key: "code" },
     { title: "Titre du sujet", dataIndex: "titreSujet", key: "titreSujet" },
@@ -465,6 +484,15 @@ function ListePfa() {
       ),
     });
   }
+  if (user.role === "etudiant") {
+    columns.splice(5, 0, {
+      title: "Email Enseignant",
+      dataIndex: "enseignant", // Remplacer "adresseEmail" par "enseignant"
+      key: "adresseEmail",
+      render: (enseignant) =>
+        enseignant ? enseignant.adresseEmail : "Email non disponible",
+    });
+  }
 
   if (user.role === "enseignant") {
     columns.splice(5, 0, {
@@ -539,52 +567,75 @@ function ListePfa() {
             </>
           )}
           {user.role === "enseignant" && (
-            <ButtonModel
-              text="Ajouter un sujet PFA"
-              onClick={showModal}
-              icon={<PlusOutlined />}
-            />
+            <>
+              <ButtonModel
+                text="Ajouter un sujet PFA"
+                onClick={showModal}
+                icon={<PlusOutlined />}
+              />
+              <ButtonModel
+                text="Consulter la liste des soutenances"
+                onClick={handleNavigateSoutenance}
+                icon={<EyeOutlined />}
+              />
+            </>
           )}
           {user.role === "etudiant" &&
             (user.niveau === 2 ? (
-              <>
-                <ButtonModel
-                  text={
-                    sortByTeacher
-                      ? "Désactiver le tri par enseignant"
-                      : "Trier par enseignant"
-                  }
-                  onClick={() => setSortByTeacher(!sortByTeacher)}
-                  icon={<DownOutlined />}
-                />
-                <Select
-                  placeholder="Sélectionner une technologie"
-                  style={{ width: 200 }}
-                  onChange={handleTechnologyFilter}
-                  value={selectedTechnology}
-                  className="custom-select" // Classe personnalisée
-                >
-                  <Select.Option value="">
-                    Toutes les technologies
-                  </Select.Option>
-                  {technologiesList.map((tech, index) => (
-                    <Select.Option key={index} value={tech}>
-                      {tech}
+              user.pfa ? (
+                <>
+                  <ButtonModel
+                    text="Consulter la date de soutenance"
+                    onClick={handleNavigateMySoutenance}
+                    icon={<EyeOutlined />}
+                  />
+                  <Alert
+                    message="Vous avez été affecté à un sujet"
+                    description="Vous pouvez consulter les détails de votre affectation."
+                    type="info"
+                    showIcon
+                  />
+                </>
+              ) : (
+                <>
+                  <ButtonModel
+                    text={
+                      sortByTeacher
+                        ? "Désactiver le tri par enseignant"
+                        : "Trier par enseignant"
+                    }
+                    onClick={() => setSortByTeacher(!sortByTeacher)}
+                    icon={<DownOutlined />}
+                  />
+                  <Select
+                    placeholder="Sélectionner une technologie"
+                    style={{ width: 200 }}
+                    onChange={handleTechnologyFilter}
+                    value={selectedTechnology}
+                    className="custom-select"
+                  >
+                    <Select.Option value="">
+                      Toutes les technologies
                     </Select.Option>
-                  ))}
-                </Select>
+                    {technologiesList.map((tech, index) => (
+                      <Select.Option key={index} value={tech}>
+                        {tech}
+                      </Select.Option>
+                    ))}
+                  </Select>
 
-                <ButtonModel
-                  text="Choisir les sujets Pfas"
-                  onClick={showModal}
-                  icon={<PlusOutlined />}
-                />
-                <ButtonModel
-                  text="Consulter mes choix"
-                  icon={<EyeOutlined />}
-                  onClick={() => setShowMyChoicesModal(true)}
-                />
-              </>
+                  <ButtonModel
+                    text="Choisir les sujets Pfas"
+                    onClick={showModal}
+                    icon={<PlusOutlined />}
+                  />
+                  <ButtonModel
+                    text="Consulter mes choix"
+                    icon={<EyeOutlined />}
+                    onClick={() => setShowMyChoicesModal(true)}
+                  />
+                </>
+              )
             ) : (
               <Alert
                 message="Accès refusé"
