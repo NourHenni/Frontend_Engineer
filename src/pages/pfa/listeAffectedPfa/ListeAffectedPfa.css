@@ -57,6 +57,12 @@
     border: 1px solid #ccc;
 }
 
+
+.table-container h3 {
+  text-align: center;
+  margin-bottom: 20px; /* optionnel : ajoute un peu d'espace en bas */
+}
+
   /* Conteneur du Select */
 /* Conteneur du Select */
 /* Conteneur du Select */

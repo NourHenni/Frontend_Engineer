@@ -1,31 +1,18 @@
-import React, { useState, useEffect, useContext } from "react";
-import {
-  Button,
-  Input,
-  InputNumber,
-  Table,
-  Space,
-  Modal,
-  Form,
-  message,
-  Spin,
-  Alert,
-  Tag,
-  Select,
-  Popconfirm,
-  Switch,
-} from "antd";
-import {
-  PlusOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  MinusCircleOutlined,
-} from "@ant-design/icons";
-import Navbar from "../../components/navbar/Navbar";
-import SidebarLayout from "../../components/sidebar/Sidebar";
-import axios from "axios";
-import { UserContext } from "../../App";
-import "./Matieres.css";
+import React, { useState, useEffect, useContext } from 'react';
+import { 
+  Button, Input, InputNumber, Table, Space, Modal, Form, message, 
+  Spin, Alert, Tag, Select, Popconfirm, Switch, 
+  notification
+} from 'antd';
+import { 
+  PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined 
+} from '@ant-design/icons';
+import Navbar from '../../components/navbar/Navbar';
+import SidebarLayout from '../../components/sidebar/Sidebar';
+import axios from 'axios';
+import { UserContext } from '../../App';
+import './Matieres.css';
+
 
 const { Option } = Select;
 
@@ -71,7 +58,40 @@ const Matieres = () => {
           }),
         ]);
 
-        setState((prev) => ({
+
+    /*    let filteredMatieres = matieres;
+
+        if (user.role === "enseignant") {
+          filteredMatieres = matieres.filter(
+            (matiere) => matiere.enseignant && matiere.enseignant._id === user._id
+          );
+        } else if (user.role === "etudiant") {
+          filteredMatieres = matieres.filter(
+            (matiere) =>
+              matiere.niveau === user.niveau && matiere.semestre === user.semestre
+          );
+        }*/
+          const user = JSON.parse(localStorage.getItem("user"));  // Assurez-vous de récupérer les infos de l'utilisateur ici
+
+          if (user?.role === "enseignant") {
+            const today = new Date();
+            const currentMonth = `${today.getFullYear()}-${today.getMonth() + 1}`;
+  
+            const lastShown = localStorage.getItem("lastMonthlyNotif");
+  
+            if (lastShown !== currentMonth) {
+              notification.info({
+                message: "Rappel mensuel",
+                description: "N'oubliez pas de mettre à jour vos matières ce mois-ci.",
+                placement: "topRight",
+                duration: 5,
+              });
+              localStorage.setItem("lastMonthlyNotif", currentMonth);
+            }
+          }
+
+        setState(prev => ({
+
           ...prev,
           data: matieresRes.data.map((item) => ({
             ...item,
@@ -88,6 +108,7 @@ const Matieres = () => {
 
     fetchData();
   }, []);
+  
 
   const handleUpdateAvancement = async (
     matiereId,
@@ -289,18 +310,17 @@ const Matieres = () => {
             {record.Nom} ({record.CodeMatiere})
           </h2>
           <div className="infos-grid">
-            <div>
-              <strong>Crédits:</strong> {record.Credit}
-            </div>
-            <div>
-              <strong>Volume Horaire:</strong> {record.VolumeHoraire}h
-            </div>
-            <div>
-              <strong>Niveau:</strong> {record.Niveau}
-            </div>
-            <div>
-              <strong>Semestre:</strong> {record.Semestre}
-            </div>
+
+            <div><strong>Crédits:</strong> {record.Credit}</div>
+            <div><strong>Volume Horaire:</strong> {record.VolumeHoraire}h</div>
+            <div><strong>Niveau:</strong> {record.Niveau}</div>
+            <div><strong>Semestre:</strong> {record.Semestre}</div>
+            <div><strong>Coefficient:</strong> {record.Coefficient}</div>
+            <div><strong>NbHeuresCours:</strong> {record.NbHeuresCours}</div>
+            <div><strong>NbHeuresTD:</strong> {record.NbHeuresTD}</div>
+            <div><strong>NbHeuresTP:</strong> {record.NbHeuresTP}</div>
+            <div><strong>Année:</strong> {record.Annee}</div>
+
           </div>
 
           <h3>Compétences associées</h3>

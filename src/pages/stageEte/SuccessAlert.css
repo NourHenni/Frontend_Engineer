@@ -1,0 +1,59 @@
+.success-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.96);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .success-alert-container {
+    max-width: 800px;
+    padding: 40px;
+    text-align: center;
+  }
+  
+  .success-icon {
+    font-size: 72px;
+    color: #52c41a;
+    margin-bottom: 24px;
+    animation: bounce 0.6s ease-in-out;
+  }
+  
+  .success-details {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f6ffed;
+    border-radius: 8px;
+    border: 1px solid #b7eb8f;
+    display: inline-block;
+  }
+  
+  .success-button {
+    height: 40px;
+    padding: 0 24px;
+    font-weight: 500;
+    margin: 0 8px;
+  }
+  
+  .success-button.secondary {
+    background: #fff;
+    color: #1890ff;
+    border-color: #1890ff;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+  }

@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Checkbox, Radio, Select, DatePicker } from "antd";
-import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
+import {
+  Modal,
+  Form,
+  Input,
+  Checkbox,
+  Radio,
+  Select,
+  DatePicker,
+  Upload,
+  Button,
+} from "antd";
+import {
+  PlusOutlined,
+  MinusCircleOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -129,6 +143,26 @@ function FormModal({
                     </Select.Option>
                   ))}
                 </Select>
+              )}
+              {field.type === "upload" && (
+                <Form.Item
+                  name={field.name}
+                  valuePropName="fileList"
+                  getValueFromEvent={(e) => {
+                    if (Array.isArray(e)) {
+                      return e;
+                    }
+                    return e?.fileList;
+                  }}
+                  noStyle
+                  rules={field.rules}
+                >
+                  <Upload beforeUpload={() => false}>
+                    <Button icon={<UploadOutlined />}>
+                      Téléverser {field.label}
+                    </Button>
+                  </Upload>
+                </Form.Item>
               )}
               {field.type === "tags" && (
                 <Select

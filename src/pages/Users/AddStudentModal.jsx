@@ -33,7 +33,21 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
     annee_licence: "",
     est_prepa: false,
   });
+  const mentions = ["Passable", "Assez bien", "Bien", "Très bien", "Excellent"];
+  const tunisianUniversities = [
+    "Université de Tunis",
+    "Université de Carthage",
+    "Université de La Manouba",
+    "Université de Tunis El Manar",
+    "Université de Sfax",
+    "Université de Sousse",
+    "Université de Monastir",
+    "Université de Kairouan",
+    "Université de Gafsa",
+    "Université de Gabès",
+    "Université de Jendouba",
 
+  ];
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues({ ...formValues, [name]: value });
@@ -46,7 +60,19 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
   const handleDateChange = (date, dateString) => {
     setFormValues({ ...formValues, dateDeNaissance: dateString });
   };
+  const tunisianBaccalaureats = [
+    "Sciences expérimentales",
+    "Mathématiques",
+    "Sciences techniques",
+    "Sciences de l’informatique",
+    "Sciences économiques et gestion",
 
+  ];
+  const tunisianGovernorates = [
+    "Ariana", "Béja", "Ben Arous", "Bizerte", "Gabès", "Gafsa", "Jendouba", "Kairouan",
+    "Kasserine", "Kébili", "Kef", "Mahdia", "La Manouba", "Médenine", "Monastir", "Nabeul",
+    "Sfax", "Sidi Bouzid", "Siliana", "Sousse", "Tataouine", "Tozeur", "Tunis", "Zaghouan"
+  ];
   const handleFormSubmit = async () => {
     const { nom, prenom, cin, adresseEmail, telephone } = formValues;
     if (!nom || !prenom || !cin || !adresseEmail || !telephone) {
@@ -99,7 +125,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
       okText="Add"
     >
       <Form layout="vertical">
-        <Form.Item label="First Name">
+        <Form.Item label="First Name" required>
           <Input
             name="nom"
             value={formValues.nom}
@@ -108,7 +134,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Last Name">
+        <Form.Item label="Last Name" required>
           <Input
             name="prenom"
             value={formValues.prenom}
@@ -117,7 +143,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="CIN">
+        <Form.Item label="CIN" required>
           <Input
             name="cin"
             value={formValues.cin}
@@ -127,7 +153,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Gender">
+        <Form.Item label="Gender" required>
           <Select
             name="genre"
             value={formValues.genre}
@@ -139,7 +165,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           </Select>
         </Form.Item>
 
-        <Form.Item label="Birth Date">
+        <Form.Item label="Birth Date" required >
           <DatePicker
             name="dateDeNaissance"
             value={formValues.dateDeNaissance ? moment(formValues.dateDeNaissance) : null}
@@ -148,15 +174,29 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Governorate">
-          <Input
+        <Form.Item label="Governorate" required>
+          <Select
             name="gouvernorat"
             value={formValues.gouvernorat}
+            onChange={(value) => handleChange({ target: { name: 'gouvernorat', value } })}
+            placeholder="Select a governorate"
+          >
+            {tunisianGovernorates.map((gov) => (
+              <Option key={gov} value={gov}>{gov}</Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+
+
+        <Form.Item label="City" required>
+          <Input
+            name="ville"
+            value={formValues.ville}
             onChange={handleChange}
             required
           />
         </Form.Item>
-
         <Form.Item label="Address">
           <Input
             name="addresse"
@@ -166,16 +206,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="City">
-          <Input
-            name="ville"
-            value={formValues.ville}
-            onChange={handleChange}
-            required
-          />
-        </Form.Item>
-
-        <Form.Item label="Postal Code">
+        <Form.Item label="Postal Code" required>
           <Input
             name="code_postal"
             value={formValues.code_postal}
@@ -185,7 +216,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Nationality">
+        <Form.Item label="Nationality" required>
           <Input
             name="nationalite"
             value={formValues.nationalite}
@@ -194,7 +225,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Phone Number">
+        <Form.Item label="Phone Number" required>
           <Input
             name="telephone"
             value={formValues.telephone}
@@ -204,7 +235,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Entry Year">
+        <Form.Item label="Entry Year" required>
           <Input
             name="annee_entree_isamm"
             value={formValues.annee_entree_isamm}
@@ -214,7 +245,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Email">
+        <Form.Item label="Email" required>
           <Input
             name="adresseEmail"
             value={formValues.adresseEmail}
@@ -223,19 +254,18 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Role">
+        <Form.Item label="Role" required>
           <Select
             name="role"
             value={formValues.role}
             onChange={(value) => handleSelectChange("role", value)}
-            required
+            disabled
           >
             <Option value="etudiant">Student</Option>
-            <Option value="admin">Admin</Option>
           </Select>
         </Form.Item>
 
-        <Form.Item label="Status">
+        <Form.Item label="Status" required>
           <Select
             name="situation"
             value={formValues.situation}
@@ -245,19 +275,24 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
             <Option value="passe">Passe</Option>
             <Option value="redouble">Redouble</Option>
             <Option value="diplome">Diplome</Option>
-        
+
           </Select>
         </Form.Item>
 
-        <Form.Item label="Baccalaureate">
-          <Input
+        <Form.Item label="Baccalaureate" required>
+          <Select
             name="baccalaureat"
             value={formValues.baccalaureat}
-            onChange={handleChange}
-          />
+            onChange={(value) => handleChange({ target: { name: 'baccalaureat', value } })}
+            placeholder="Select a Baccalaureate type"
+          >
+            {tunisianBaccalaureats.map((bac) => (
+              <Option key={bac} value={bac}>{bac}</Option>
+            ))}
+          </Select>
         </Form.Item>
 
-        <Form.Item label="Baccalaureate Year">
+        <Form.Item label="Baccalaureate Year" required>
           <Input
             name="annee_bac"
             value={formValues.annee_bac}
@@ -266,7 +301,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Baccalaureate Average">
+        <Form.Item label="Baccalaureate Average" required>
           <Input
             name="moyenne_bac"
             value={formValues.moyenne_bac}
@@ -276,22 +311,33 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
         </Form.Item>
 
         <Form.Item label="Mention">
-          <Input
-            name="mention"
-            value={formValues.mention}
-            onChange={handleChange}
-          />
-        </Form.Item>
+  <Select
+    name="mention"
+    value={formValues.mention}
+    onChange={(value) => handleChange({ target: { name: 'mention', value } })}
+    placeholder="Select a mention"
+  >
+    {mentions.map((m) => (
+      <Option key={m} value={m}>{m}</Option>
+    ))}
+  </Select>
+</Form.Item>
 
-        <Form.Item label="University">
-          <Input
-            name="universite"
-            value={formValues.universite}
-            onChange={handleChange}
-          />
-        </Form.Item>
+<Form.Item label="University" required>
+  <Select
+    name="universite"
+    value={formValues.universite}
+    onChange={(value) => handleChange({ target: { name: 'universite', value } })}
+    placeholder="Select a university"
+    showSearch
+  >
+    {tunisianUniversities.map((uni) => (
+      <Option key={uni} value={uni}>{uni}</Option>
+    ))}
+  </Select>
+</Form.Item>
 
-        <Form.Item label="Establishment">
+        <Form.Item label="Establishment" required>
           <Input
             name="etablissement"
             value={formValues.etablissement}
@@ -299,15 +345,19 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Degree Type">
-          <Input
-            name="type_licence"
-            value={formValues.type_licence}
-            onChange={handleChange}
-          />
-        </Form.Item>
+        <Form.Item label="Degree Type" required>
+  <Select
+    name="type_licence"
+    value={formValues.type_licence}
+    onChange={(value) => handleChange({ target: { name: 'type_licence', value } })}
+    placeholder="Select degree type"
+  >
+    <Option value="Licence">Licence</Option>
+    <Option value="Mastère">Mastère</Option>
+  </Select>
+</Form.Item>
 
-        <Form.Item label="Specialty">
+        <Form.Item label="Specialty" required>
           <Input
             name="specialite"
             value={formValues.specialite}
@@ -315,7 +365,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Degree Year">
+        <Form.Item label="Degree Year" required>
           <Input
             name="annee_licence"
             value={formValues.annee_licence}
@@ -324,7 +374,7 @@ const AddStudentModal = ({ isModalVisible, handleCancel, handleAddStudent }) => 
           />
         </Form.Item>
 
-        <Form.Item label="Preparation Year">
+        <Form.Item label="Preparation Year" required>
           <Select
             name="est_prepa"
             value={formValues.est_prepa}
