@@ -18,8 +18,10 @@ import {
 } from "../../../services/pfaServices";
 import { message, Space, Tag } from "antd";
 import ManuelAssignment from "../manualAssignment/ManuelAssignment";
+import { useNavigate } from "react-router-dom";
 
 function ListeAffectedPfa() {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(true);
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(4); //
@@ -157,6 +159,10 @@ function ListeAffectedPfa() {
     setPfas(data); // Mettre à jour l'état avec les données récupérées
   };
 
+  const handleNavigate = () => {
+    navigate("/home/listeSoutenancesPfa");
+  };
+
   const columns = [
     { title: "Code PFA", dataIndex: "code_pfa", key: "code" },
     { title: "Titre du sujet", dataIndex: "titreSujet", key: "titreSujet" },
@@ -250,6 +256,11 @@ function ListeAffectedPfa() {
               text="Envoyer la liste actuelle"
               onClick={sendAffectedePfas}
               icon={<MailFilled />}
+            />
+            <ButtonModel
+              text="Consulter la liste des soutenances"
+              onClick={handleNavigate}
+              icon={<EyeOutlined />}
             />
           </>
         </div>

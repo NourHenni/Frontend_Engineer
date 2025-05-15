@@ -21,6 +21,7 @@ import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
 import PlanningStages from "./pages/stageEte/PlanningStages";
 import ListeAffectedPfa from "./pages/pfa/listeAffectedPfa/ListeAffectedPfa";
+import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
 
 export const UserContext = createContext();
 
@@ -105,6 +106,14 @@ function App() {
                 }
               />
               <Route
+                path="/home/listeSoutenancesPfa"
+                element={
+                  <ProtectedRoute>
+                    <ListeSoutenance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/home/Matieres"
                 element={
                   <ProtectedRoute>
@@ -149,6 +158,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ListePfa />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/home/listeSoutenancesPfa"
+                  element={
+                    <ProtectedRoute>
+                      <ListeSoutenance />
                     </ProtectedRoute>
                   }
                 />

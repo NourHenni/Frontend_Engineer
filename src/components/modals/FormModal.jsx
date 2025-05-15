@@ -9,6 +9,7 @@ import {
   DatePicker,
   Upload,
   Button,
+  TimePicker,
 } from "antd";
 import {
   PlusOutlined,
@@ -117,6 +118,7 @@ function FormModal({
                 </Select>
               )}
               {field.type === "date" && <DatePicker />}
+              {field.type === "time" && <TimePicker />}
               {field.type === "rangeDate" && (
                 <RangePicker format="YYYY-MM-DD" />
               )}
@@ -144,6 +146,24 @@ function FormModal({
                   ))}
                 </Select>
               )}
+              {field.type === "selectEnseignats" && (
+                <Select
+                  {...field.selectProps} // Pour passer les props personnalisés comme options, placeholder...
+                  showSearch
+                  optionFilterProp="label"
+                >
+                  {field.selectProps?.options?.map((option) => (
+                    <Select.Option
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                    >
+                      {option.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              )}
+
               {field.type === "upload" && (
                 <Form.Item
                   name={field.name}
