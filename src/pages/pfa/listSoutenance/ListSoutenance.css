@@ -46,15 +46,21 @@
 
   .table-container {
     position: relative;
-    top: 50px;
+    top: 30px;
     width: 100%;
     max-width: 1200px;
     margin-left: 100px;
     margin-right: 10px;
     overflow-x: auto;
-    padding: 21px 10px 16px 10px;
+     padding: 21px 10px 16px 10px;
     background: #fff;
     border: 1px solid #ccc;
+}
+
+
+.table-container h3 {
+  text-align: center;
+  margin-bottom: 20px; /* optionnel : ajoute un peu d'espace en bas */
 }
 
   /* Conteneur du Select */

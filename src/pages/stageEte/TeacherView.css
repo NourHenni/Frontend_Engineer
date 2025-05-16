@@ -1,0 +1,42 @@
+/* Styles pour TeacherView */
+.custom-select .ant-select-selector {
+    border-radius: 6px !important;
+  }
+  
+  .custom-input {
+    border-radius: 6px;
+  }
+  
+  .custom-table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .custom-table .ant-table-thead > tr > th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .custom-table .ant-table-tbody > tr:hover > td {
+    background-color: #f1f3f5 !important;
+  }
+  
+  .custom-pagination .ant-pagination-item-active {
+    border-color: #1890ff;
+    font-weight: 500;
+  }
+  
+  .custom-pagination .ant-pagination-item-active a {
+    color: #1890ff;
+  }
+  
+  /* Animation de chargement */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .custom-table {
+    animation: fadeIn 0.5s ease;
+  }

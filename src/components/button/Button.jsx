@@ -16,4 +16,4 @@ function ButtonModel({ text, icon, onClick }) {
   );
 }
 
-export default Button;
+export default ButtonModel;

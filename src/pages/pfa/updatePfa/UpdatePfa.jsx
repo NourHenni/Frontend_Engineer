@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import FormModal from "../../../components/modals/FormModal";
 import { updatePfa } from "../../../services/pfaServices";
-import { message } from "antd";
+import { Input, message, Spin, Tag } from "antd";
+import axios from "axios";
 
 // Composant de mise à jour d'un sujet PFA
 function UpdatePfa({
@@ -12,24 +13,27 @@ function UpdatePfa({
   setFormData,
   dataPfas,
   refreshMyData,
+  selectedPfaId, // <<< ici
 }) {
   const [loading, setLoading] = useState(false);
   const [isChecked, setIsChecked] = useState(false); // Déplacer isChecked ici
+  const [students, setStudents] = useState([]);
 
   // Fonction pour pré-remplir les données du formulaire si elles sont déjà disponibles dans dataPfas
   const prefillFormData = () => {
     if (dataPfas && dataPfas.length > 0) {
       // Vérifier si le tableau n'est pas vide
-      const pfa = dataPfas[0];
-      console.log("pfa", dataPfas); // Accéder au premier élément du tableau
+      const pfa = dataPfas.find((item) => item._id === selectedPfaId);
+
+      console.log("pfa", pfa); // Accéder au premier élément du tableau
 
       setFormData({
         title: pfa.titreSujet || "",
         description: pfa.description || "",
         technologies: pfa.technologies || "",
         estBinome: pfa.estBinome, // Assurez-vous que estBinome soit bien un booléen
-        //etudiant1: pfa.etudiant1 || "",
-        //etudiant2: pfa.etudiant2 || "",
+        etudiant1: pfa.idEtudiant1 || "",
+        etudiant2: pfa.idEtudiant2 || "",
       });
 
       console.log("PFA:", pfa); // Afficher l'objet PFA pour vérifier les données
@@ -55,24 +59,44 @@ function UpdatePfa({
     setIsChecked(e.target.checked);
   };
 
-  // Soumettre le formulaire pour mettre à jour le sujet PFA
-  // Dans handleSubmit
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/pfa/studentsPfas",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const students = response.data.users; // Liste des étudiants
+        setStudents(students);
+      } catch (error) {
+        console.error("Erreur", error);
+      }
+    };
+
+    fetchStudents();
+  }, []);
+
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
 
-      // Préparer les nouvelles données du PFA
       let newPfa = {
         titreSujet: values.titreSujet,
         description: values.description,
-        technologies: values.technologies, // Split si plusieurs technologies
+        technologies: values.technologies,
         estBinome: isChecked,
-        etudiant1: isChecked ? values.etudiant1 : "", // Si Binôme, on prend les étudiants
-        etudiant2: isChecked ? values.etudiant2 : "",
+        idEtudiant1: values.etudiant1,
+        idEtudiant2: values.etudiant2,
       };
+      console.log("newPfa", newPfa);
 
-      const pfa = dataPfas[0];
-      const pfaId = pfa._id;
+      const pfaId = selectedPfaId;
+
+      console.log("pfaId", pfaId);
 
       if (!pfaId) {
         message.error("L'ID du sujet PFA est manquant.");
@@ -81,6 +105,7 @@ function UpdatePfa({
 
       const response = await updatePfa(pfaId, newPfa);
       console.log(response);
+
       if (response && response.message) {
         message.success(response.message);
         refreshMyData();
@@ -94,11 +119,16 @@ function UpdatePfa({
         error?.response?.data?.message || "Une erreur s'est produite !"
       );
     } finally {
-      setLoading(false); // Assurez-vous de stopper le chargement après la requête
+      setLoading(false);
     }
   };
+  const handleTagChange = (tags) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      technologies: tags,
+    }));
+  };
 
-  // Définition des champs du formulaire
   const formFields = [
     {
       label: "Titre du sujet",
@@ -127,9 +157,25 @@ function UpdatePfa({
     {
       label: "Technologies",
       name: "technologies",
-      type: "input",
-      //onchange: handleInputChange,
-
+      type: "tags",
+      onchange: handleTagChange,
+      value: formData.technologies, // Afficher les tags existants
+      render: (tags) => (
+        <div>
+          {tags.map((tag, index) => (
+            <Tag key={index}>{tag}</Tag>
+          ))}
+        </div>
+      ),
+      component: (
+        <Input
+          placeholder="Ajouter des technologies"
+          onPressEnter={(e) => {
+            handleTagChange([...formData.technologies, e.target.value]);
+            e.target.value = "";
+          }}
+        />
+      ),
       rules: [
         {
           required: true,
@@ -149,25 +195,45 @@ function UpdatePfa({
       wrapperCol: { span: 16, offset: 6 },
     },
     {
-      label: "Etudiant 1",
+      label: "Etudiant1",
       name: "etudiant1",
-      type: "input",
-      // onchange: handleInputChange,
-
-      rules: [{ required: false }],
-      style: { marginTop: 0 },
+      type: "selectStudents",
+      rules: [{ required: false, message: "Champ requis !" }],
+      selectProps: {
+        options: students.map((student) => ({
+          label: `${student.nom} ${student.prenom}`,
+          value: student._id,
+        })),
+        placeholder: "Sélectionner un étudiant",
+        allowClear: true,
+      },
     },
     {
-      label: "Etudiant 2",
+      label: "Etudiant2",
       name: "etudiant2",
-      type: "input",
-      onchange: handleInputChange,
-
-      rules: [{ required: false }],
-      style: { marginTop: 0 },
+      type: "selectStudents",
+      rules: [
+        {
+          required: false,
+          message: "Champ requis !",
+        },
+      ],
+      selectProps: {
+        options: students.map((student) => ({
+          label: `${student.nom} ${student.prenom}`,
+          value: student._id,
+        })),
+        placeholder: "Sélectionner un binôme",
+        allowClear: true,
+        disabled: !isChecked, // Désactiver ce champ si pas de binôme
+      },
     },
   ];
-
+  if (loading) {
+    return (
+      <Spin spinning={loading} size="small" tip="Chargement en cours..." />
+    );
+  }
   return (
     <div>
       <FormModal
@@ -178,6 +244,7 @@ function UpdatePfa({
         title={title}
         formData={formData}
         onSubmit={handleSubmit}
+        loading={loading}
       />
     </div>
   );
