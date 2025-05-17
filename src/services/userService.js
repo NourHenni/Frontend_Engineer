@@ -154,6 +154,26 @@ export const fetchTeachers = async () => {
         throw new Error(error.message);
     }
 };
+// Fetch student CV by ID
+export const fetchStudentCV = async (id) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/students/${id}/CV`, {
+            method: "GET",
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch student CV: ${errorText}`);
+        }
+
+        const data = await response.json(); // Assuming the CV is returned as JSON
+        return data;
+    } catch (error) {
+        console.error("Error fetching student CV:", error);
+        throw new Error(error.message);
+    }
+};
 
 // Fetch teacher by ID
 export const fetchTeacherById = async (id) => {
@@ -251,7 +271,20 @@ export const updateTeacherPassword = async (id, { newPassword, confirmPassword }
     }
 };
 
-
+  export const deleteTeacher = async (id) => {
+    const response = await fetch(`${API_BASE_URL}/teachers/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ action: "delete" }),
+    });
+  
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to delete teacher: ${errorMessage}`);
+    }
+  
+    return await response.json();
+  };
 // Login
 export const login = async (credentials) => {
     try {
@@ -285,4 +318,89 @@ export const logout = async () => {
     } catch (error) {
         throw new Error(error.message);
     }
+};
+// Add this to your userService.js
+export const updateStudentSituation = async (id, { nouvelleSituation, anneeAcademique }) => {
+  const response = await fetch(`${API_BASE_URL}/years/student/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ nouvelleSituation, anneeAcademique })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update student situation');
+  }
+  
+  return await response.json();
+};
+export const batchUpdateStudentSituation = async (ids, updateData) => {
+  try {
+    const results = await Promise.all(
+      ids.map(id => updateStudentSituation(id, updateData))
+    );
+    return results;
+  } catch (error) {
+    throw new Error(`Batch update failed: ${error.message}`);
+  }
+};
+export const createAcademicYear = async (anneeUniversitaire) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/years/`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(anneeUniversitaire),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create academic year: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating academic year:", error);
+    throw new Error(error.message);
+  }
+};
+export const fetchAcademicYearData = async (year) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/years/${year}`, {
+            method: "GET",
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch academic year data: ${errorText}`);
+        }
+
+        const data = await response.json();
+        return data; // contient: users, pfas, stagesEte, competences, matieres
+    } catch (error) {
+        console.error("Error fetching academic year data:", error);
+        throw new Error(error.message);
+    }
+};
+
+
+// Add this to your userService.js
+export const notifyDiplomeStudents = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/years/notify`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to notify students: ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error notifying students:", error);
+    throw new Error(error.message);
+  }
 };
