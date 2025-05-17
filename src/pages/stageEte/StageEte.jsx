@@ -1,21 +1,24 @@
-import React, { useContext, useState, useEffect } from "react";
-import { message, Card, Row, Col, Steps, Alert, Divider, Result, Select, Statistic, Table, Spin, Input,Empty , Space ,Tag} from "antd";
-import { PlusOutlined, FilePdfOutlined, InfoCircleOutlined, CheckCircleOutlined , SearchOutlined,
+
+import React, { useContext, useState, useEffect } from "react";  // Corrigez "recat" en "react"
+import { message, Card, Row, Col, Steps, Button, Alert, Divider, Result, Select, Statistic, Table, Spin, Input,Empty , Space ,Tag , Typography ,} from "antd";
+import { PlusOutlined, InfoCircleOutlined, CheckCircleOutlined , SearchOutlined,
   
   FileWordOutlined,
   FileExcelOutlined,
+  FilePdfOutlined,
   UserOutlined,
   MailOutlined,
   FilterOutlined } from "@ant-design/icons";
-import Button from "../../components/button/Button";
+  import { useNavigate } from "react-router-dom";
+//import Button from "../../components/button/Button";
 import FormModal from "../../components/modals/FormModal";
 import { postInternship } from "../../services/stageServices";
 import { UserContext } from "../../App";
 import "./stageEte.css";
 import "./TeacherView.css";
 import SuccessAlert from "./SuccessAlert";
-import SidebarLayout from "../../components/sidebar/Sidebar";
-import Navbar from "../../components/navbar/Navbar";
+import SidebarLayout from "../../components/Sidebar/Sidebar";
+import Navbar from "../../components/Navbar/Navbar";
 import ListeStages from "./ListeStages";
 import { getAssignedStages } from "../../services/stageServices";
 
@@ -25,7 +28,7 @@ const { Step } = Steps;
 const { Option } = Select;
 const { Countdown } = Statistic;
 const { Search } = Input;
-import { Typography } from "antd";
+
 const { Title, Text } = Typography;
 
 
@@ -45,9 +48,11 @@ function StageEte() {
   const [deadline] = useState(Date.now() + 1000 * 60 * 60 * 24 * 15); // 15 jours pour exemple
   const [niveau, setNiveau] = useState("premiereannee");
   const [assignedStages, setAssignedStages] = useState([]);
-const [loadingStages, setLoadingStages] = useState(false);
-const [filteredStages, setFilteredStages] = useState([]);
+  const [loadingStages, setLoadingStages] = useState(false);
+  const navigate = useNavigate();
+  const [filteredStages, setFilteredStages] = useState([]);
   const [searchText, setSearchText] = useState("");
+
   
 
 
@@ -73,6 +78,8 @@ const [filteredStages, setFilteredStages] = useState([]);
         try {
           const token = localStorage.getItem("token");
           const data = await getAssignedStages(niveau, token);
+          console.log("Assigned stages:", data);
+
           setAssignedStages(data);
           setFilteredStages(data); // initialiser la liste filtrée
         } catch (error) {
@@ -160,8 +167,9 @@ const [filteredStages, setFilteredStages] = useState([]);
   const renderStudentView = () => (
     <>
       <Card title="Dépôt de stage d'été" bordered={false} className="depot-card" extra={
-        <Button type="primary" text="Nouveau dépôt" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} className="depot-button" />
+                <Button type="primary" text="Déposer un sujet" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} className="depot-button" />
       }>
+
         <Row gutter={[24, 24]}>
           <Col span={24}>
             <Alert message="Instructions importantes" description={
@@ -196,6 +204,23 @@ const [filteredStages, setFilteredStages] = useState([]);
         onSubmit={handleSubmit} 
         width={800} 
       />
+
+      <Button
+    type="primary"
+    icon={<FilePdfOutlined />}
+    onClick={() => navigate("/affectation/premiereannee")}
+  >
+    Consulter PV 1ère Année
+  </Button>
+
+  <Button
+    type="default"
+    icon={<FilePdfOutlined />}
+    onClick={() => navigate("/affectation/deuxiemeannee")}
+    style={{ marginLeft: "10px" }}
+  >
+    Consulter PV 2ème Année
+  </Button>
     </>
   );
 
@@ -309,21 +334,7 @@ const [filteredStages, setFilteredStages] = useState([]);
           align: "center",
           width: 100
         },
-        {
-          title: "Niveau",
-          dataIndex: "niveau",
-          key: "niveau",
-          render: (text) => (
-            <Tag 
-              color={text === "premiereannee" ? "geekblue" : "purple"} 
-              style={{ borderRadius: 4 }}
-            >
-              {text === "premiereannee" ? "1ère Année" : "2ème Année"}
-            </Tag>
-          ),
-          align: "center",
-          width: 120
-        },
+        
         {
           title: "Nature",
           dataIndex: "natureSujet",
@@ -337,50 +348,14 @@ const [filteredStages, setFilteredStages] = useState([]);
           render: (_, record) => (
             <Space direction="vertical" size={0}>
               <Text strong style={{ color: colors.text }}>
-                <UserOutlined /> {record.etudiant.nom}
+                <UserOutlined /> {record.etudiant.nom} {record.etudiant.prenom}
               </Text>
-              <Text type="secondary">
-                <MailOutlined /> {record.etudiant.email}
-              </Text>
+              
             </Space>
           ),
           width: 220
         },
-        {
-          title: "Documents",
-          key: "docs",
-          render: (_, record) => {
-            const fichiers = record.fichiers || {};
-            const docLabels = {
-              rapport: "Rapport",
-              attestation: "Attestation",
-              ficheEvaluation: "Fiche d’évaluation"
-            };
-    
-            return (
-              <div className="flex flex-col gap-1">
-                {Object.entries(docLabels).map(([key, label]) => {
-                  const url = fichiers[key];
-                  return (
-                    url && (
-                      <a
-                        key={key}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        style={{ display: "flex", alignItems: "center", gap: 6, color: colors.primary }}
-                      >
-                        {getFileIcon(url)} {label}
-                      </a>
-                    )
-                  );
-                })}
-              </div>
-            );
-          },
-          width: 200
-        }
+        
     
       ];
     
@@ -463,7 +438,14 @@ const [filteredStages, setFilteredStages] = useState([]);
                   <Table
                     columns={columns}
                     dataSource={filteredStages}
-                    rowKey={(record) => record.titreSujet + record.etudiant.email}
+                  rowKey={(record) => record?._id || record?.id || Math.random()}
+  onRow={(record) => ({
+    onClick: () => {
+     
+      navigate(`/internship/${niveau}/${record._id }`);
+    },
+    style: { cursor: 'pointer' } 
+  })}
                     pagination={{ 
                       pageSize: 8, 
                       showSizeChanger: false,

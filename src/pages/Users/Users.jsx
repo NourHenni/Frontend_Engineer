@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Card } from "antd";
-import SidebarLayout from "../../components/sidebar/Sidebar";
-import Navbar from "../../components/navbar/Navbar";
+import SidebarLayout from "../../components/Sidebar/Sidebar";
+import Navbar from "../../components/Navbar/Navbar";
 import StudentTable from "./StudentTable";
 import TeacherTable from "./TeacherTable";
 import { Route, Routes } from "react-router-dom"; // No need for <Router> here

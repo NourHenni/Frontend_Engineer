@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../../components/navbar/Navbar";
-import SidebarLayout from "../../components/sidebar/Sidebar";
+import Navbar from "../../components/Navbar/Navbar";
+import SidebarLayout from "../../components/Sidebar/Sidebar";
 import TableData from "../../components/table/TableData";
 import { Space, Spin } from "antd";
 import moment from "moment";

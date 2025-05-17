@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Table, Typography, Spin, message, Card, Button } from "antd";
-import { getInternshipsByType } from "../../services/stageServices";
+import { getInternshipsByTypeAndYear } from "../../services/stageServices";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 
@@ -19,7 +19,7 @@ function PlanningStages() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await getInternshipsByType("premiereannee", token);
+      const response = await ggetInternshipsByTypeAndYeare("premiereannee", "2024-2025", token);
       setStages(response.data);
     } catch (err) {
       message.error("Erreur lors du chargement des stages.");

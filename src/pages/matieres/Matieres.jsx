@@ -7,8 +7,8 @@ import {
 import { 
   PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined 
 } from '@ant-design/icons';
-import Navbar from '../../components/navbar/Navbar';
-import SidebarLayout from '../../components/sidebar/Sidebar';
+import Navbar from '../../components/Navbar/Navbar';
+import SidebarLayout from '../../components/Sidebar/Sidebar';
 import axios from 'axios';
 import { UserContext } from '../../App';
 import './Matieres.css';

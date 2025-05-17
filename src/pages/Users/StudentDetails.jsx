@@ -11,8 +11,8 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
-import Navbar from "../../components/navbar/Navbar";
-import SidebarLayout from "../../components/sidebar/Sidebar";
+import Navbar from "../../components/Navbar/Navbar";
+import SidebarLayout from "../../components/Sidebar/Sidebar";
 import { fetchStudentById, updateStudent, updateStudentPassword } from "../../services/userService";
 
 const { Title, Text } = Typography;

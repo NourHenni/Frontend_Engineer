@@ -20,6 +20,13 @@ import ListePfa from "./pages/pfa/listePfas/ListePfa"
 import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
 import PlanningStages from "./pages/stageEte/PlanningStages";
+import ListeStages from './pages/stageEte/ListeStages'; 
+import StageDetails from './pages/stageEte/DetailsStage'; 
+import TeacherDetailsStage from './pages/stageEte/TeacherDetailsStage'; 
+import AffectationView from "./pages/stageEte/student/AffectationView";  
+import PeriodManagement from './pages/stageEte/PeriodManagement';
+
+
 
 
 export const UserContext = createContext();
@@ -121,7 +128,24 @@ function App() {
                 }
               />
               <Route path="/planning-stages" element={<PlanningStages />} />
+              <Route
+  path="/internship/:type/:id"
+  element={
+    <ProtectedRoute>
+      <StageDetails />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/periods/StageEte"
+  element={
+    <ProtectedRoute>
+      <PeriodManagement />
+    </ProtectedRoute>
+  }
+/>
 
+        
              
             </>
           )}
@@ -169,6 +193,17 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              
+<Route path="/affectation/:type" element={<AffectationView />} />
+              <Route
+  path="/internship/:type/:id"
+  element={
+    <ProtectedRoute>
+      <TeacherDetailsStage />
+    </ProtectedRoute>
+  }
+/>
               <Route path="/planning-stages" element={<PlanningStages />} />
 
             </>

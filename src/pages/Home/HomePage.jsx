@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Layout } from "antd";
-import Navbar from "../../components/navbar/Navbar";
-import Sidebar from "../../components/sidebar/Sidebar"; // Assuming Sidebar has its own collapsing logic
+import Navbar from "../../components/Navbar/Navbar";
+import Sidebar from "../../components/Sidebar/Sidebar"; // Assuming Sidebar has its own collapsing logic
 import DashboardContent from "./DashboardContent";
 
 const { Content } = Layout;

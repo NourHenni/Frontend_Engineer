@@ -64,3 +64,30 @@
   .custom-table {
     animation: fadeIn 0.5s ease;
   }
+
+  .clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #f5f5f5;
+}
+
+/* PeriodManagement.css */
+.period-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.period-table .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.period-actions button {
+  transition: all 0.3s;
+}
+
+.period-actions button:hover {
+  transform: scale(1.1);
+}
