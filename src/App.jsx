@@ -21,6 +21,12 @@ import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
 import Profile from "./pages/Users/Profile";
 import PlanningStages from "./pages/stageEte/PlanningStages";
+import ListeStages from './pages/stageEte/admin/ListeStages'; 
+import StageDetails from './pages/stageEte/admin/DetailsStage'; 
+import TeacherDetailsStage from './pages/stageEte/TeacherDetailsStage'; 
+import AffectationView from "./pages/stageEte/student/AffectationView";  
+import PeriodManagement from './pages/stageEte/admin/PeriodManagement';
+
 import ListeAffectedPfa from "./pages/pfa/listeAffectedPfa/ListeAffectedPfa";
 import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
 
@@ -111,7 +117,61 @@ function App() {
                 path="/home/listeSoutenancesPfa"
                 element={
                   <ProtectedRoute>
+
+                    <StageEte />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/Competences"
+                element={
+                  <ProtectedRoute>
+                    <Competences />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/planning-stages" element={<PlanningStages />} />
+              <Route
+  path="/internship/:type/:id"
+  element={
+    <ProtectedRoute>
+      <StageDetails />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/periods/StageEte"
+  element={
+    <ProtectedRoute>
+      <PeriodManagement />
+    </ProtectedRoute>
+  }
+/>
+
+        
+             
+            </>
+          )}
+
+          {/* Routes protégées pour enseignants et étudiants */}
+          {token && (user.role === "enseignant" || user.role === "etudiant") && (
+            <>
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/PFA"
+                element={
+                  <ProtectedRoute>
+                    <ListePfa />
+
                     <ListeSoutenance />
+
                   </ProtectedRoute>
                 }
               />
@@ -139,6 +199,17 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              
+<Route path="/affectation/:type" element={<AffectationView />} />
+              <Route
+  path="/internship/:type/:id"
+  element={
+    <ProtectedRoute>
+      <TeacherDetailsStage />
+    </ProtectedRoute>
+  }
+/>
               <Route path="/planning-stages" element={<PlanningStages />} />
             </>
           )}

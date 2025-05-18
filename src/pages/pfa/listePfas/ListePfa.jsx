@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import ButtonModel from "../../../components/button/Button";
-import Navbar from "../../../components/navbar/Navbar";
-import SidebarLayout from "../../../components/sidebar/Sidebar";
+import Navbar from "../../../components/Navbar/Navbar";
+import SidebarLayout from "../../../components/Sidebar/Sidebar";
 import TableData from "../../../components/table/TableData";
 import { useNavigate } from "react-router-dom";
 import {
