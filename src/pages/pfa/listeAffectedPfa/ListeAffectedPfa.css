@@ -1,0 +1,112 @@
+.sujet-modal .ant-modal-content {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  
+  .sujet-modal .ant-modal-header {
+    background-color: #0a91d1;
+    color: white;
+    width: 150px;
+    padding-left: 5px;
+    border-radius: 10px ;
+  }
+  
+  .sujet-modal .ant-modal-title {
+    color: white;
+    font-size: 18px;
+  }
+  
+  .sujet-modal .sujet-details {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  .sujet-modal .sujet-details p {
+    margin: 8px 0;
+  }
+  
+  .sujet-modal .sujet-details strong {
+    color: #333;
+  }
+
+  .filter-select{
+    font-weight: 400;
+    width: 170px !important;
+
+    .ant-select-selection-placeholder{
+      color: primary-color;
+    }
+    .anticon{
+      svg{
+        color: primary-color;
+      }
+    }
+  }
+
+  .table-container {
+    position: relative;
+    top: 50px;
+    width: 120%;
+    max-width: 1200px;
+    margin-left: 80px;
+    margin-right: 10px;
+    overflow-x: auto;
+    padding: 21px 25px 16px 25px;
+    background: #fff;
+    border: 1px solid #ccc;
+}
+
+
+.table-container h3 {
+  text-align: center;
+  margin-bottom: 20px; /* optionnel : ajoute un peu d'espace en bas */
+}
+
+  /* Conteneur du Select */
+/* Conteneur du Select */
+/* Conteneur du Select */
+.custom-select .ant-select-selector {
+  background-color: white; /* Fond blanc pour le Select */
+  color: black; /* Couleur du texte noir */
+  border-radius: 8px; /* Bords arrondis */
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 20px; /* Espacement à l'intérieur du Select */
+  border: 1px solid #0a91d1; /* Bordure bleue pour le Select */
+  transition: all 0.3s ease; /* Transition fluide pour les effets */
+  margin-top: 10px; /* Décale le Select de 10px vers le bas */
+}
+
+/* Autres styles (survol, focus, etc.) restent inchangés */
+
+
+/* Effet au survol */
+.custom-select .ant-select-selector:hover {
+  background-color: #f0f5ff; /* Légère couleur de fond au survol */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Ombre au survol */
+  transform: translateY(-2px); /* Effet de survol */
+}
+
+/* Effet de focus */
+.custom-select .ant-select-selector:focus {
+  outline: none; /* Supprimer l'effet de focus par défaut */
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.3); /* Effet de focus */
+}
+
+/* Contenu de la liste d'options */
+.custom-select .ant-select-item {
+  color: black; /* Couleur du texte des options (noir pour fond blanc) */
+}
+
+/* Option sélectionnée */
+.custom-select .ant-select-item-option-selected {
+  background-color: #0a91d1; /* Fond bleu pour l'option sélectionnée */
+  color: white; /* Couleur du texte de l'option sélectionnée (blanc) */
+}
+
+/* L'option au survol */
+.custom-select .ant-select-item-option:hover {
+  background-color: #40a9ff; /* Fond bleu clair au survol */
+  color: white; /* Texte blanc au survol */
+}

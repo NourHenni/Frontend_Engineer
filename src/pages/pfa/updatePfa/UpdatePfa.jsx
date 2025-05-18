@@ -80,8 +80,6 @@ function UpdatePfa({
     fetchStudents();
   }, []);
 
-  // Soumettre le formulaire pour mettre à jour le sujet PFA
-  // Dans handleSubmit
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
@@ -127,11 +125,10 @@ function UpdatePfa({
   const handleTagChange = (tags) => {
     setFormData((prevState) => ({
       ...prevState,
-      technologies: tags, // Mettre à jour la liste des technologies avec les tags
+      technologies: tags,
     }));
   };
 
-  // Définition des champs du formulaire
   const formFields = [
     {
       label: "Titre du sujet",
@@ -147,8 +144,6 @@ function UpdatePfa({
       label: "Description",
       name: "description",
       type: "textarea",
-      // onchange: handleInputChange,
-      // Assurez-vous que "formData.description" est défini
       rules: [
         {
           required: true,
@@ -190,7 +185,7 @@ function UpdatePfa({
       label: "En Binôme ?",
       name: "estBinome",
       type: "checkbox",
-      //onchange: handleChoiceChange,
+
       checked: isChecked, // Utilisez isChecked ici
 
       rules: [{ required: true, message: "Veuillez indiquer le type !" }],

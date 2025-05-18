@@ -17,7 +17,7 @@ import {
   InfoCircleOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { fetchTeachers, createTeacher } from "../../services/userService";
+import { fetchTeachers, createTeacher, updateTeacherById, deleteTeacher } from "../../services/userService";
 import { useNavigate } from "react-router-dom";
 import AddTeacherModal from "./AddTeacherModal";
 import * as XLSX from "xlsx";
@@ -56,7 +56,28 @@ function TeacherTable() {
   );
 
   const handleEdit = (teacher) => console.log("Edit teacher:", teacher);
-  const handleDelete = (id) => console.log("Delete teacher with ID:", id);
+  const handleDelete = async (teacher) => {
+    const confirm = window.confirm(
+      teacher.archivee
+        ? "This teacher is already archived. Are you sure you want to permanently delete them?"
+        : "Do you want to archive this teacher?"
+    );
+  
+    if (!confirm) return;
+  
+    try {
+      if (!teacher.archivee) {
+        await updateTeacherById(teacher._id, { archivee: true });
+        message.success("Teacher archived successfully");
+      } else {
+        await deleteTeacher(teacher._id);
+        message.success("Teacher permanently deleted");
+      }
+      loadTeachers(); // Refresh the list
+    } catch (err) {
+      message.error("Operation failed: " + err.message);
+    }
+  };
   const handleDetails = (id) => navigate(`/teacher/${id}`);
 
   const showModal = () => setIsModalVisible(true);
@@ -143,11 +164,11 @@ function TeacherTable() {
         <Space style={{ justifyContent: "center", width: "100%" }}>
           
           <Button
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record._id)}
-          />
+        size="small"
+        danger
+        icon={<DeleteOutlined />}
+        onClick={() => handleDelete(record)}
+      />
           <Button
             size="small"
             icon={<InfoCircleOutlined />}
