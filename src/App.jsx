@@ -19,7 +19,6 @@ import Pfa from "./pages/pfa/Pfa";
 import ListePfa from "./pages/pfa/listePfas/ListePfa";
 import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
-import Profile from "./pages/Users/Profile";
 import PlanningStages from "./pages/stageEte/PlanningStages";
 import ListeAffectedPfa from "./pages/pfa/listeAffectedPfa/ListeAffectedPfa";
 import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
@@ -71,9 +70,8 @@ function App() {
           />
           <Route path="/student/:id" element={<StudentDetails />} />
           <Route path="/teacher/:id" element={<TeachersDetails />} />
-          
           {/* Routes protégées pour admin */}
-          {token && user?.role === "admin" && (
+          {token && user.role === "admin" && (
             <>
               <Route
                 path="/home"
@@ -199,20 +197,6 @@ function App() {
               </>
             )}
 
-          {/* Profile route only for etudiant */}
-          <Route
-            path="/home/Profile"
-            element={
-              token && user?.role === "etudiant" ? (
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              ) : (
-                <Navigate to="/" />
-              )
-            }
-          />
-          
           {/* Redirection de secours */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
