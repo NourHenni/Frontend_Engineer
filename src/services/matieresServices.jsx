@@ -28,9 +28,14 @@ export const deleteMatiere = async (id) => {
 
 // 📥 Récupérer une matière par ID
 export const fetchMatiereById = async (id) => {
-  const result = await Axios.get(`${API_URL}/${id}`, header())
-  return result.data.model
-}
+  const result = await Axios.get(`${API_URL}/${id}`, header());
+
+  // On fusionne les données reçues depuis le backend
+  return {
+    ...result.data.matiere,
+    historiqueModifications: result.data.historique,
+  };
+};
 
 // 📋 Récupérer toutes les matières
 export const fetchMatieres = async () => {
