@@ -20,9 +20,10 @@ import {
   publishListeSoutenances,
   sendListSoutenance,
 } from "../../../services/pfaServices";
-import { message, Space, Tag } from "antd";
+import { message, Select, Space, Tag } from "antd";
 import UpdatePlanning from "../updatePlanning/UpadtePlanning";
 import { UserContext } from "../../../App";
+import { getLastAcademicYear } from "../../../services/appServices";
 
 function ListeSoutenance() {
   dayjs.extend(utc);
@@ -32,6 +33,10 @@ function ListeSoutenance() {
   const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(4); //
   const [currentPage, setCurrentPage] = useState(1);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [selectedYearFilter, setSelectedYearFilter] = useState(null);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
+  const [sortByTeacher, setSortByTeacher] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModifying, setIsModifying] = useState(false);
   const [isConsulting, setIsConsulting] = useState(false);
@@ -49,24 +54,81 @@ function ListeSoutenance() {
     etudiant: fetchMySoutenance,
   };
 
+  // 🧠 Initialisation de l’année académique + années disponibles
   useEffect(() => {
-    const loadSoutenaces = async () => {
+    const initAcademicYear = async () => {
+      try {
+        const response = await getLastAcademicYear();
+        setCurrentAcademicYear(response.data);
+
+        if (user.role === "admin") {
+          const pfas = await fetchSoutenacesPfas();
+
+          // ✅ Extraire l'année depuis le champ `pfa.code_pfa` (ex: "PFA2026-01" → 2026)
+          const years = [
+            ...new Set(
+              pfas
+                .map((pfa) => {
+                  const code = pfa?.pfa?.code_pfa || "";
+                  const match = code.match(/^PFA(\d{4})-/);
+                  return match ? parseInt(match[1]) : null;
+                })
+                .filter(Boolean)
+            ),
+          ].sort((a, b) => b - a);
+
+          setAvailableYears(years);
+
+          const [, year] = response.data.year.split("-");
+          setSelectedYearFilter(parseInt(year));
+        }
+      } catch (err) {
+        console.error("Erreur lors du chargement de l’année académique :", err);
+      }
+    };
+    initAcademicYear();
+  }, [user.role]);
+
+  // 🧠 Chargement des soutenances selon le rôle
+  useEffect(() => {
+    const loadSoutenances = async () => {
       setLoading(true);
       try {
-        const fetcher = roleToFetcher[user.role];
-        if (fetcher) {
-          const result = await fetcher();
-          setSoutenances(result);
+        let data = [];
+
+        if (user.role === "etudiant") {
+          data = user.pfa ? await fetchMySoutenance() : [];
+        } else {
+          const fetcher = roleToFetcher[user.role];
+          data = fetcher ? await fetcher() : [];
         }
-      } catch (e) {
-        console.error("Erreur de chargement :", e);
+
+        // ✅ Filtrage basé sur l’année dans `pfa.code_pfa`
+        if (user.role === "admin" && selectedYearFilter) {
+          data = data.filter((soutenance) => {
+            const code = soutenance?.pfa?.code_pfa || "";
+            const match = code.match(/^PFA(\d{4})-/);
+            const year = match ? parseInt(match[1]) : null;
+            return year === selectedYearFilter;
+          });
+        }
+
+        if (user.role === "etudiant" && data.length === 0) {
+          message.info(
+            "Aucune soutenance PFA disponible pour cette année académique."
+          );
+        }
+
+        setSoutenances(data);
+      } catch (error) {
+        console.error("Erreur de chargement des soutenances :", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadSoutenaces();
-  }, [user.role]);
+    loadSoutenances();
+  }, [user.role, selectedYearFilter, user.pfa]);
 
   const paginatedData = soutenances.slice(
     (currentPage - 1) * limit,
@@ -77,6 +139,7 @@ function ListeSoutenance() {
     pageSize: limit,
     total: soutenances.length,
   };
+
   const handlePaginationChange = (page, pageSize) => {
     setCurrentPage(page); // Mettre à jour la page courante
     setLimit(pageSize); // Mettre à jour la taille de la page
@@ -308,6 +371,25 @@ function ListeSoutenance() {
             </>
           )}
         </div>
+        {user.role === "admin" && (
+          <>
+            {/* ... other admin buttons ... */}
+            <Select
+              placeholder="Filtrer par année"
+              style={{ width: 200, marginLeft: 10 }}
+              onChange={(value) => setSelectedYearFilter(value)}
+              value={selectedYearFilter}
+              allowClear
+            >
+              <Select.Option value="">Toutes les années</Select.Option>
+              {availableYears.map((year) => (
+                <Select.Option key={year} value={year}>
+                  {year}
+                </Select.Option>
+              ))}
+            </Select>
+          </>
+        )}
         <TableData
           columns={columns}
           data={paginatedData}

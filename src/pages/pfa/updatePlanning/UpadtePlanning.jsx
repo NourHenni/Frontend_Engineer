@@ -127,19 +127,16 @@ function UpdatePlanning({
       label: "Date de la soutenance",
       name: "date_soutenance",
       type: "date",
-      //onchange: handleInputChange,
     },
     {
       label: "Heure de soutenance",
       name: "heure_soutenance",
       type: "time",
-      //onchange: handleInputChange,
     },
     {
       label: "Salle de soutenance",
       name: "salle",
       type: "input",
-      //onchange: handleInputChange,
 
       rules: [
         { required: true, message: "Veuillez entrer le titre du sujet !" },

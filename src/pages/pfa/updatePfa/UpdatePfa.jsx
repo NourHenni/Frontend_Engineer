@@ -144,8 +144,6 @@ function UpdatePfa({
       label: "Description",
       name: "description",
       type: "textarea",
-      // onchange: handleInputChange,
-      // Assurez-vous que "formData.description" est défini
       rules: [
         {
           required: true,
@@ -187,7 +185,7 @@ function UpdatePfa({
       label: "En Binôme ?",
       name: "estBinome",
       type: "checkbox",
-      //onchange: handleChoiceChange,
+
       checked: isChecked, // Utilisez isChecked ici
 
       rules: [{ required: true, message: "Veuillez indiquer le type !" }],
