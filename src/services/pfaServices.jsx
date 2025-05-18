@@ -160,16 +160,16 @@ export const addPfa = async (pfa) => {
 
 export const updatePfa = async (id, pfa) => {
   try {
+    console.log("id", id);
     const result = await axios.patch(
       `http://localhost:5000/pfa/${id}/mine`,
-      { pfa },
+      pfa,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // Assurez-vous d'envoyer le token d'authentification si nécessaire
         },
       }
     );
-    console.log("idUSER", id);
     return result.data; // Retourner la réponse du serveur
   } catch (error) {
     console.error("Erreur dans la modification du pfa : ", error);
@@ -203,4 +203,234 @@ export const submitPfaChoices = async (data) => {
   } catch (error) {
     throw error.response?.data || { message: "Erreur inconnue" };
   }
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                 Sprint 2                                   */
+/* -------------------------------------------------------------------------- */
+
+export const automatedAssignment = async () => {
+  try {
+    const response = await axios.patch(
+      "http://localhost:5000/pfa/assign",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    // Affichage ou retour des données du backend
+    console.log("Réponse du serveur :", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erreur lors de l'affectation automatique :",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const publishAffectedPfas = async () => {
+  try {
+    const result = await axios.post(
+      "http://localhost:5000/pfa/publish/pfas/true",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result.data;
+  } catch (error) {
+    console.error("Erreur lors la publication des pfas : ", error);
+    throw error;
+  }
+};
+
+export const maskedffectedPfas = async () => {
+  try {
+    const result = await axios.post(
+      "http://localhost:5000/pfa/publish/pfas/false",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result.data;
+  } catch (error) {
+    console.error("Erreur lors la publication des pfas : ", error);
+    throw error;
+  }
+};
+
+export const sendAffectedEmail = async () => {
+  try {
+    // Effectuer l'appel POST vers la route /open
+    const result = await axios.post(
+      "http://localhost:5000/pfa/list/pfas/send",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result.data.message;
+  } catch (error) {
+    console.error("Erreur lors de l'ajout de la période : ", error);
+    throw error;
+  }
+};
+
+export const fetchSoutenacesPfas = async () => {
+  const token = localStorage.getItem("token");
+  const result = await axios.get("http://localhost:5000/pfa/list/soutenances", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return result.data.model;
+};
+
+export const createPlanning = async () => {
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/pfa/soutenances",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    // Affichage ou retour des données du backend
+    console.log("Réponse du serveur :", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Erreur lors de l'affectation automatique :",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const publishListeSoutenances = async () => {
+  try {
+    const result = await axios.post(
+      "http://localhost:5000/pfa/publish/publish",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result;
+  } catch (error) {
+    console.error("Erreur lors la publication des pfas : ", error);
+    throw error;
+  }
+};
+
+export const maskedListeSoutenances = async () => {
+  try {
+    const result = await axios.post(
+      "http://localhost:5000/pfa/publish/hide",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result;
+  } catch (error) {
+    console.error("Erreur lors la publication des pfas : ", error);
+    throw error;
+  }
+};
+
+export const sendListSoutenance = async () => {
+  try {
+    // Effectuer l'appel POST vers la route /open
+    const result = await axios.post(
+      "http://localhost:5000/pfa/list/send/soutenances",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return result.data.message;
+  } catch (error) {
+    console.error("Erreur lors de l'ajout de la période : ", error);
+    throw error;
+  }
+};
+
+export const updateSoutenance = async (id, soutenance) => {
+  try {
+    console.log("id", id);
+    const result = await axios.patch(
+      `http://localhost:5000/pfa/${id}/soutenances`,
+      soutenance,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // Assurez-vous d'envoyer le token d'authentification si nécessaire
+        },
+      }
+    );
+    return result.data; // Retourner la réponse du serveur
+  } catch (error) {
+    console.error("Erreur dans la modification du soutenance : ", error);
+    throw error; // Vous pouvez renvoyer l'erreur pour qu'elle soit gérée plus haut
+  }
+};
+
+export const fetchMySoutenances = async () => {
+  const token = localStorage.getItem("token");
+  const result = await axios.get("http://localhost:5000/pfa/mesSoutenances", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return result.data.model;
+};
+
+export const fetchMyPfa = async () => {
+  const token = localStorage.getItem("token");
+  const result = await axios.get("http://localhost:5000/pfa/student/minee", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return result.data.model;
+};
+
+export const fetchMySoutenance = async () => {
+  const token = localStorage.getItem("token");
+  const result = await axios.get(
+    "http://localhost:5000/pfa/sudent/mySoutenance",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return result.data.model;
 };

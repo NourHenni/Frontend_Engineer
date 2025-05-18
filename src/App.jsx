@@ -9,18 +9,21 @@ import {
 import LoginPage from "./pages/Auth/Login/LoginPage";
 import Competences from "./pages/competences/Competences";
 import Matieres from "./pages/matieres/Matieres";
-
 import StageEte from "./pages/stageEte/StageEte";
 import Users from "./pages/Users/Users";
 import { Spin } from "antd";
-import HomePage from "./pages/Home/HomePage"; // Make sure you create this HomePage component
+import HomePage from "./pages/Home/HomePage";
 import ProtectedRoute from "./pages/ProtectedRoute";
-import "./App.css";
 import { fetchUserInfo } from "./services/authServices";
 import Pfa from "./pages/pfa/Pfa";
-import ListePfa from "./pages/pfa/listePfas/ListePfa"
+import ListePfa from "./pages/pfa/listePfas/ListePfa";
 import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
+import Profile from "./pages/Users/Profile";
+import PlanningStages from "./pages/stageEte/PlanningStages";
+import ListeAffectedPfa from "./pages/pfa/listeAffectedPfa/ListeAffectedPfa";
+import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
+
 export const UserContext = createContext();
 
 function App() {
@@ -42,7 +45,7 @@ function App() {
     };
     if (token) fetchMe();
     else setLoading(false);
-  }, [token]); // Ajoutez token comme dépendance
+  }, [token]);
 
   if (loading) {
     return (
@@ -53,15 +56,24 @@ function App() {
   }
 
   return (
-
     <UserContext.Provider value={user}>
       <Router>
         <Routes>
           {/* Route publique */}
           <Route path="/" element={<LoginPage />} />
-
+          <Route
+            path="/home/Users"
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/student/:id" element={<StudentDetails />} />
+          <Route path="/teacher/:id" element={<TeachersDetails />} />
+          
           {/* Routes protégées pour admin */}
-          {token && user.role === "admin" && (
+          {token && user?.role === "admin" && (
             <>
               <Route
                 path="/home"
@@ -79,12 +91,27 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/home/listePfas"
                 element={
                   <ProtectedRoute>
                     <ListePfa />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/listeAffectedPfa"
+                element={
+                  <ProtectedRoute>
+                    <ListeAffectedPfa />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/home/listeSoutenancesPfa"
+                element={
+                  <ProtectedRoute>
+                    <ListeSoutenance />
                   </ProtectedRoute>
                 }
               />
@@ -112,9 +139,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-             <Route path="/home/Users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-        <Route path="/student/:id" element={<StudentDetails />} />
-        <Route path="/teacher/:id" element={<TeachersDetails />} />
+              <Route path="/planning-stages" element={<PlanningStages />} />
             </>
           )}
 
@@ -135,6 +160,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ListePfa />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/home/listeSoutenancesPfa"
+                  element={
+                    <ProtectedRoute>
+                      <ListeSoutenance />
                     </ProtectedRoute>
                   }
                 />
@@ -162,10 +195,26 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/planning-stages" element={<PlanningStages />} />
               </>
             )}
 
+          {/* Profile route only for etudiant */}
+          <Route
+            path="/home/Profile"
+            element={
+              token && user?.role === "etudiant" ? (
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+          
           {/* Redirection de secours */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </UserContext.Provider>

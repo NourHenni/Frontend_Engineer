@@ -3,6 +3,7 @@ import ButtonModel from "../../../components/button/Button";
 import Navbar from "../../../components/navbar/Navbar";
 import SidebarLayout from "../../../components/sidebar/Sidebar";
 import TableData from "../../../components/table/TableData";
+import { useNavigate } from "react-router-dom";
 import {
   EyeOutlined,
   MailFilled,
@@ -22,14 +23,17 @@ import {
   Spin,
   Alert,
   Table,
+  Tag,
 } from "antd";
+
 import "./ListePfa.css";
 import AddPeriod from "../addPeriod/AddPeriod";
 import AddPfa from "../addPFA/AddPfa";
-import ChoicePfa from "../choicePFA/ChoicePfa";
+
 import PfaSelectionForm from "../choicePFA/ChoicePfa";
 import { UserContext } from "../../../App";
 import {
+  fetchMyPfa,
   fetchMyPfas,
   fetchPfas,
   fetchPublishedPfas,
@@ -39,16 +43,16 @@ import {
 import axios from "axios";
 import UpdatePfa from "../updatePfa/UpdatePfa";
 import ChoicesModal from "../choicesModel/ChoiceModel";
-import ChoiceStudents from "../choices/ChoicesStudent";
 
 function ListePfa() {
+  const navigate = useNavigate();
   const user = useContext(UserContext);
   const [dataPfas, setDataPfas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedSujet, setSelectedSujet] = useState(null);
-  const [limit, setLimit] = useState(4); // 👈 4 éléments par page
+  const [limit, setLimit] = useState(4); //
   const [currentPage, setCurrentPage] = useState(1);
   const [isModifying, setIsModifying] = useState(false);
   const [isConsulting, setIsConsulting] = useState(false);
@@ -60,7 +64,10 @@ function ListePfa() {
   const [selectedTechnology, setSelectedTechnology] = useState(""); // Nouveau état pour la technologie sélectionnée
   const [technologiesList, setTechnologiesList] = useState([]);
   const [hasPublishedPfas, setHasPublishedPfas] = useState(false);
-
+  const [selectedPfaId, setSelectedPfaId] = useState(null);
+  const [collapsed, setCollapsed] = useState(true);
+  const [isAffected, setIsAffected] = useState(false);
+  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -73,7 +80,6 @@ function ListePfa() {
   const roleToFetcher = {
     admin: fetchPfas,
     enseignant: fetchMyPfas,
-    etudiant: fetchPublishedPfas,
   };
 
   // Fonction pour charger les données
@@ -81,18 +87,36 @@ function ListePfa() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetcher = roleToFetcher[user.role];
-        if (fetcher) {
-          const result = await fetcher();
-          setDataPfas(result);
+        let result = [];
 
-          // Extraire les technologies disponibles à partir des données
-          const technologies = [
-            ...new Set(result.flatMap((pfa) => pfa.technologies)),
-          ];
-          setTechnologiesList(technologies);
-          console.log("technologies", technologies);
+        if (user.role === "etudiant") {
+          // Ici test si user.pfa existe et n'est pas null ou vide
+          if (user.pfa) {
+            // s'il y a un PFA assigné, on récupère uniquement celui-ci
+            result = await fetchMyPfa();
+          } else {
+            // sinon on récupère la liste des sujets publiés
+            result = await fetchPublishedPfas();
+          }
+        } else {
+          // Pour les autres rôles, on continue à utiliser roleToFetcher
+          const fetcher = roleToFetcher[user.role];
+          if (fetcher) {
+            result = await fetcher();
+          }
         }
+
+        setDataPfas(result);
+
+        if (user.role === "etudiant" && (!result || result.length === 0)) {
+          message.info("Pas encore de sujets PFA publiés");
+        }
+
+        // Extraire les technologies disponibles à partir des données
+        const technologies = [
+          ...new Set(result.flatMap((pfa) => pfa.technologies)),
+        ];
+        setTechnologiesList(technologies);
       } catch (e) {
         console.error("Erreur de chargement :", e);
       } finally {
@@ -101,16 +125,21 @@ function ListePfa() {
     };
 
     loadData();
-  }, [user.role]); // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
+  }, [user.role, user.pfa]);
+  // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
 
   const refreshData = async () => {
     const data = await fetchPfas();
     setDataPfas(data); // Mettre à jour l'état avec les données récupérées
   };
   const showModalChoice = () => {
-    setIsModalVisible(true);
+    setIsChoiceModalOpen(true);
   };
 
+  // Fonction pour fermer le modal de consultation des choix
+  const handleChoiceCancel = () => {
+    setIsChoiceModalOpen(false);
+  };
   // Fonction pour filtrer les PFA par technologie
   const handleTechnologyFilter = (value) => {
     setSelectedTechnology(value); // Mettre à jour la technologie sélectionnée
@@ -124,11 +153,6 @@ function ListePfa() {
       // Si aucune technologie n'est sélectionnée, recharger toutes les données
       loadData();
     }
-  };
-
-  // Fonction pour gérer la pagination
-  const handlePaginationChangee = (page, pageSize) => {
-    // Mettre à jour la page courante et la taille de la page (implémenter votre logique de pagination)
   };
 
   // Fonction pour fermer le modal
@@ -183,17 +207,17 @@ function ListePfa() {
     setIsConsulting(false);
     setIsModifying(true);
     setInfoPeriod(info);
+    console.log("info passé à onUpdatePfa", info);
 
-    // Chercher le sujet  à modifier dans la liste des périodes
-    const pfasdata = dataPfas.find((pfa) => pfa.id === info.id);
+    const pfasdata = dataPfas.find((pfa) => pfa._id === info._id);
     console.log("pfasdata", pfasdata);
     if (pfasdata) {
-      // Pré-remplir les champs du formulaire de mise à jour
+      setSelectedPfaId(pfasdata._id); // <<< ICI on enregistre l'ID !
       setFormData({
         titreSujet: pfasdata.titreSujet || "",
         description: pfasdata.description || "",
         technologies: pfasdata.technologies || [],
-        estBinome: pfasdata.estBinome || "oui",
+        estBinome: pfasdata.estBinome || false,
         etudiant1: pfasdata.etudiant1 || "",
         etudiant2: pfasdata.etudiant2 || "",
       });
@@ -237,12 +261,20 @@ function ListePfa() {
     }
   };
 
+  const handleNavigate = () => {
+    navigate("/home/listeAffectedPfa");
+  };
+
+  const handleNavigateSoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
+  };
+
   const maskedfas = async () => {
     try {
       const responseMessage = await maqsuedPfas();
 
       if (responseMessage) {
-        //  message.success(responseMessage);
+        message.success(responseMessage);
       } // Afficher le message de succès
 
       const updatedPfas = await fetchPfas(); // Mettre à jour avec les nouvelles données
@@ -352,6 +384,10 @@ function ListePfa() {
     });
   };
 
+  const handleNavigateMySoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
+  };
+
   const columns = [
     { title: "Code PFA", dataIndex: "code_pfa", key: "code" },
     { title: "Titre du sujet", dataIndex: "titreSujet", key: "titreSujet" },
@@ -372,11 +408,6 @@ function ListePfa() {
       key: "estBinome",
       render: (binome) => (binome ? "Oui" : "Non"),
     },
-    {
-      title: "Etat Affectation",
-      dataIndex: "etatAffectation",
-      key: "etatAffectation",
-    },
   ];
 
   if (user.role === "admin" || user.role === "etudiant") {
@@ -388,31 +419,52 @@ function ListePfa() {
     });
   }
 
-  if (user.role === "admin") {
-    columns.splice(6, 0, {
-      title: "Étudiants",
-      dataIndex: "etudiants",
-      key: "etudiants",
-      render: (etudiants) => (
-        <>
-          {etudiants && etudiants.length > 0
-            ? etudiants.map((etudiant, index) => (
-                <div key={index}>
-                  {etudiant.nom} {etudiant.prenom}
-                </div>
-              ))
-            : null}
-        </>
+  if (user.role === "enseignant" || user.role === "etudiant") {
+    columns.splice(7, 0, {
+      title: "État Affectation",
+      dataIndex: "etatAffectation",
+      key: "etatAffectation",
+      render: (etat) => (
+        <Tag
+          color={
+            etat === "affected" || etat === "published" || etat === "masked"
+              ? "green"
+              : "red"
+          }
+        >
+          {etat === "affected" || etat === "published" || etat === "masked"
+            ? "Affecté"
+            : "Non affecté"}
+        </Tag>
       ),
     });
+  }
 
-    columns.splice(6, 0, {
+  if (user.role === "admin") {
+    columns.splice(5, 0, {
       title: "Etat Depot",
       dataIndex: "etatDepot",
       key: "etatDepot",
       render: (text, record) => <EtatDepotDropdown record={record} />,
     });
-    // Ajout d'une action pour ouvrir une nouvelle table avec les choix
+    columns.splice(6, 0, {
+      title: "État Affectation",
+      dataIndex: "etatAffectation",
+      key: "etatAffectation",
+      render: (etat) => (
+        <Tag
+          color={
+            etat === "affected" || etat === "published" || etat === "masked"
+              ? "green"
+              : "red"
+          }
+        >
+          {etat === "affected" || etat === "published" || etat === "masked"
+            ? "Affecté"
+            : "Non affecté"}
+        </Tag>
+      ),
+    });
     columns.push({
       title: "Voir Choix",
       key: "voirChoix",
@@ -432,18 +484,44 @@ function ListePfa() {
       ),
     });
   }
+  if (user.role === "etudiant") {
+    columns.splice(5, 0, {
+      title: "Email Enseignant",
+      dataIndex: "enseignant", // Remplacer "adresseEmail" par "enseignant"
+      key: "adresseEmail",
+      render: (enseignant) =>
+        enseignant ? enseignant.adresseEmail : "Email non disponible",
+    });
+  }
 
   if (user.role === "enseignant") {
     columns.splice(5, 0, {
-      title: "Etudiants",
-      dataIndex: "etudiant",
-      key: "etudiant",
+      title: "Étudiants",
+      dataIndex: "etudiants",
+      key: "etudiants",
+      render: (etudiants) => (
+        <>
+          {etudiants && etudiants.length > 0
+            ? etudiants.map((etudiant, index) => (
+                <div key={index}>
+                  {etudiant.nom} {etudiant.prenom}
+                </div>
+              ))
+            : null}
+        </>
+      ),
     });
     columns.splice(6, 0, {
-      title: "Etat Depot",
+      title: "État Dépôt",
       dataIndex: "etatDepot",
       key: "etatDepot",
+      render: (etat) => (
+        <Tag color={etat === "published" ? "green" : "default"}>
+          {etat === "published" ? "Publié" : "Non publié"}
+        </Tag>
+      ),
     });
+
     columns.push({
       title: "Actions",
       key: "action",
@@ -456,11 +534,11 @@ function ListePfa() {
       ),
     });
   }
-
+  const [showMyChoicesModal, setShowMyChoicesModal] = useState(false);
   return (
     <div>
       <Navbar />
-      <SidebarLayout />
+      <SidebarLayout collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="table-container">
         <div className="table-header">
           <h3>Liste des sujets PFA</h3>
@@ -481,54 +559,83 @@ function ListePfa() {
                 onClick={sendPfas}
                 icon={<MailFilled />}
               />
+              <ButtonModel
+                text="Consulter la liste d'affectation"
+                onClick={handleNavigate}
+                icon={<EyeOutlined />}
+              />
             </>
           )}
           {user.role === "enseignant" && (
-            <ButtonModel
-              text="Ajouter un sujet PFA"
-              onClick={showModal}
-              icon={<PlusOutlined />}
-            />
+            <>
+              <ButtonModel
+                text="Ajouter un sujet PFA"
+                onClick={showModal}
+                icon={<PlusOutlined />}
+              />
+              <ButtonModel
+                text="Consulter la liste des soutenances"
+                onClick={handleNavigateSoutenance}
+                icon={<EyeOutlined />}
+              />
+            </>
           )}
           {user.role === "etudiant" &&
             (user.niveau === 2 ? (
-              <>
-                <ButtonModel
-                  text={
-                    sortByTeacher
-                      ? "Désactiver le tri par enseignant"
-                      : "Trier par enseignant"
-                  }
-                  onClick={() => setSortByTeacher(!sortByTeacher)}
-                  icon={<DownOutlined />}
-                />
-                <Select
-                  placeholder="Sélectionner une technologie"
-                  style={{ width: 200 }}
-                  onChange={handleTechnologyFilter}
-                  value={selectedTechnology}
-                >
-                  <Select.Option value="">
-                    Toutes les technologies
-                  </Select.Option>
-                  {technologiesList.map((tech, index) => (
-                    <Select.Option key={index} value={tech}>
-                      {tech}
+              user.pfa ? (
+                <>
+                  <ButtonModel
+                    text="Consulter la date de soutenance"
+                    onClick={handleNavigateMySoutenance}
+                    icon={<EyeOutlined />}
+                  />
+                  <Alert
+                    message="Vous avez été affecté à un sujet"
+                    description="Vous pouvez consulter les détails de votre affectation."
+                    type="info"
+                    showIcon
+                  />
+                </>
+              ) : (
+                <>
+                  <ButtonModel
+                    text={
+                      sortByTeacher
+                        ? "Désactiver le tri par enseignant"
+                        : "Trier par enseignant"
+                    }
+                    onClick={() => setSortByTeacher(!sortByTeacher)}
+                    icon={<DownOutlined />}
+                  />
+                  <Select
+                    placeholder="Sélectionner une technologie"
+                    style={{ width: 200 }}
+                    onChange={handleTechnologyFilter}
+                    value={selectedTechnology}
+                    className="custom-select"
+                  >
+                    <Select.Option value="">
+                      Toutes les technologies
                     </Select.Option>
-                  ))}
-                </Select>
+                    {technologiesList.map((tech, index) => (
+                      <Select.Option key={index} value={tech}>
+                        {tech}
+                      </Select.Option>
+                    ))}
+                  </Select>
 
-                <ButtonModel
-                  text="Choisir les sujets Pfas"
-                  onClick={showModal}
-                  icon={<PlusOutlined />}
-                />
-                <ButtonModel
-                  text="Consulter mes choix "
-                  onClick={showModalChoice}
-                  icon={<EyeOutlined />}
-                />
-              </>
+                  <ButtonModel
+                    text="Choisir les sujets Pfas"
+                    onClick={showModal}
+                    icon={<PlusOutlined />}
+                  />
+                  <ButtonModel
+                    text="Consulter mes choix"
+                    icon={<EyeOutlined />}
+                    onClick={() => setShowMyChoicesModal(true)}
+                  />
+                </>
+              )
             ) : (
               <Alert
                 message="Accès refusé"
@@ -545,8 +652,6 @@ function ListePfa() {
           loading={loading}
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
-
-          // Passer la fonction pour gérer la pagination
         />
       </div>
       {user.role === "admin" && (
@@ -566,20 +671,14 @@ function ListePfa() {
           refreshMyData={refreshMyData}
         />
       )}
-      {user.role === "etudiant" && (
+      {user.role === "etudiant" && isModalOpen && (
         <PfaSelectionForm
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           title="Sélectionner 3 sujets PFA"
         />
       )}
-      {user.role === "etudiant" && (
-        <ChoiceStudents
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          title="Mes choix "
-        />
-      )}
+
       {/* Modale de consultation du sujet */}
       <Modal
         title="Détails du sujet"
@@ -630,10 +729,11 @@ function ListePfa() {
           isUpdateModalOpen={isUpdateModalOpen}
           setIsModalOpen={setIsUpdateModalOpen}
           title={"Mettre à jour un sujet pfa"}
-          formData={formData} // Passer formData au modal
-          setFormData={setFormData} // Passer la fonction setFormData au modal
+          formData={formData}
+          setFormData={setFormData}
           refreshMyData={refreshMyData}
           dataPfas={dataPfas}
+          selectedPfaId={selectedPfaId} // <<< Important !
         />
       )}
       {selectedRecord && (

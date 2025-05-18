@@ -33,6 +33,7 @@ function Pfa() {
   useEffect(() => {
     const loadPeriods = async () => {
       const data = await fetchPeriod();
+      console.log("Périodes récupérées :", data);
       setPeriods(data); // Mettre à jour l'état avec les données récupérées
 
       setLoading(false);
@@ -98,7 +99,7 @@ function Pfa() {
       render: (text) => <a>{text}</a>,
     },
     {
-      title: "Période pour déposer  PFA",
+      title: "Période de dépot",
       key: "Period",
       render: (_, record) => {
         if (!record.Date_Debut_depot || !record.Date_Fin_depot) return null;

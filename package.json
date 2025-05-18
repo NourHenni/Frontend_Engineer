@@ -15,6 +15,7 @@
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "antd": "^5.24.6",
     "axios": "^1.8.4",
+    "dayjs-plugin-utc": "^0.1.2",
     "engineers-frontend": "file:",
     "jwt-decode": "^4.0.0",
     "moment": "^2.30.1",

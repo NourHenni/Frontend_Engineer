@@ -19,6 +19,7 @@ function Navbar() {
       <Menu.Item key="logout" onClick={handleLogout}>
         Logout
       </Menu.Item>
+     
     </Menu>
   );
 
