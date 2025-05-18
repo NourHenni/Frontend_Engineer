@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import ButtonModel from "../../../components/button/Button";
-import Navbar from "../../../components/navbar/Navbar";
-import SidebarLayout from "../../../components/sidebar/Sidebar";
+
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import {
@@ -24,6 +23,8 @@ import { message, Select, Space, Tag } from "antd";
 import UpdatePlanning from "../updatePlanning/UpadtePlanning";
 import { UserContext } from "../../../App";
 import { getLastAcademicYear } from "../../../services/appServices";
+import Navbar from "../../../components/Navbar/Navbar";
+import SidebarLayout from "../../../components/Sidebar/Sidebar";
 
 function ListeSoutenance() {
   dayjs.extend(utc);

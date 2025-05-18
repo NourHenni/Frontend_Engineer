@@ -11,10 +11,10 @@ import {
     BookOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-
 import Navbar from "../../components/navbar/Navbar";
 import SidebarLayout from "../../components/sidebar/Sidebar";
 import StudentCV from "./StudentCV";
+
 import { fetchStudentById, updateStudent, updateStudentPassword } from "../../services/userService";
 
 const { Title, Text } = Typography;

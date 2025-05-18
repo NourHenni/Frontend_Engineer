@@ -133,3 +133,67 @@
   text-align: center;
   padding: 40px;
 }
+
+/* Layout Styles */
+.site-layout {
+  margin-left: 200px;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+.logo {
+  height: 32px;
+  margin: 16px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+/* Content Styles */
+.stage-details-container {
+  padding: 24px;
+}
+
+.info-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+}
+
+.student-card {
+  background-color: #f6ffed;
+}
+
+.stage-card {
+  background-color: #e6f7ff;
+}
+
+.defense-card {
+  background-color: #fff2e8;
+}
+
+/* Button Styles */
+.back-button {
+  margin-bottom: 16px;
+}
+
+.file-button {
+  padding: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .site-layout {
+    margin-left: 0;
+  }
+  
+  .details-row {
+    flex-direction: column;
+  }
+}

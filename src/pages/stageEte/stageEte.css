@@ -247,3 +247,46 @@
       padding: 12px;
     }
   }
+/* Styles pour les boutons PV */
+.pv-button {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  border-radius: 8px;
+  height: 40px;
+  font-weight: 500;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.pv-button:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+/* Alignement des boutons PV */
+.ant-col-24 .ant-btn {
+  margin-left: 0;
+}  
+/* Dans votre fichier CSS */
+.ant-form-item-has-error .ant-input {
+  border-color: #ff4d4f;
+}
+
+.ant-form-item-explain-error {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.upload-error .ant-upload {
+  border-color: #ff4d4f !important;
+}
+
+.required-field::after {
+  content: " *";
+  color: #ff4d4f;
+}
