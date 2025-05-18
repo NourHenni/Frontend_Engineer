@@ -22,9 +22,9 @@ import {
   CalendarOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getAllPeriods, updatePeriod, deletePeriod, addPeriod } from "../../services/stageServices";
-import Sidebar from "../../components/Sidebar/Sidebar";
-import Navbar from "../../components/Navbar/Navbar";
+import { getAllPeriods, updatePeriod, deletePeriod, addPeriod } from "../../../services/stageServices";
+import Sidebar from "../../../components/Sidebar/Sidebar";
+import Navbar from "../../../components/Navbar/Navbar";
 import "./PeriodManagement.css";
 
 const { Title } = Typography;

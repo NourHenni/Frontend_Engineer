@@ -26,7 +26,7 @@ import {
   getEnseignants,
   updateAssignedTeacher,
   togglePlanningVisibility,
-} from "../../services/stageServices";
+} from "../../../services/stageServices";
 import {
   SearchOutlined,
   UserOutlined,
@@ -42,7 +42,7 @@ import {
   FileSearchOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
-import "./ListeStages.css";
+import "../ListeStages.css";
 import dayjs from "dayjs";
 
 const { Option } = Select;
