@@ -5,19 +5,32 @@ import {
   notification
 } from 'antd';
 import { 
-  PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined 
+  PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, 
+  DeleteOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import Navbar from '../../components/navbar/Navbar';
 import SidebarLayout from '../../components/sidebar/Sidebar';
 import axios from 'axios';
 import { UserContext } from '../../App';
 import './Matieres.css';
+import { fetchMatiereById } from '../../services/matieresServices';
+
+
 
 
 const { Option } = Select;
 
 const Matieres = () => {
   // Context et états
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedMatiereForDetails, setSelectedMatiereForDetails] = useState(null);
+  const [enseignants, setEnseignants] = useState([]);
+  const [loadingEnseignants, setLoadingEnseignants] = useState(false);
+  
+  
   const { role: userRole } = useContext(UserContext) || {};
   const [form] = Form.useForm();
   const [state, setState] = useState({
@@ -44,70 +57,115 @@ const Matieres = () => {
   } = state;
 
   // Chargement initial des données
-  useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("token");
+ useEffect(() => {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
 
-      try {
-        const [matieresRes, competencesRes] = await Promise.all([
-          axios.get("http://localhost:5000/matieres", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5000/Competences", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-
-    /*    let filteredMatieres = matieres;
-
-        if (user.role === "enseignant") {
-          filteredMatieres = matieres.filter(
-            (matiere) => matiere.enseignant && matiere.enseignant._id === user._id
-          );
-        } else if (user.role === "etudiant") {
-          filteredMatieres = matieres.filter(
-            (matiere) =>
-              matiere.niveau === user.niveau && matiere.semestre === user.semestre
-          );
-        }*/
-          const user = JSON.parse(localStorage.getItem("user"));  // Assurez-vous de récupérer les infos de l'utilisateur ici
-
-          if (user?.role === "enseignant") {
-            const today = new Date();
-            const currentMonth = `${today.getFullYear()}-${today.getMonth() + 1}`;
-  
-            const lastShown = localStorage.getItem("lastMonthlyNotif");
-  
-            if (lastShown !== currentMonth) {
-              notification.info({
-                message: "Rappel mensuel",
-                description: "N'oubliez pas de mettre à jour vos matières ce mois-ci.",
-                placement: "topRight",
-                duration: 5,
-              });
-              localStorage.setItem("lastMonthlyNotif", currentMonth);
-            }
-          }
-
-        setState(prev => ({
-
-          ...prev,
-          data: matieresRes.data.map((item) => ({
-            ...item,
-            key: item._id,
-            competences: item.competences || [],
-          })),
-          competences: competencesRes.data,
-          loading: false,
-        }));
-      } catch (err) {
-        setState((prev) => ({ ...prev, error: err.message, loading: false }));
+  // Récupération des enseignants
+// Composant React
+const fetchEnseignants = async () => {
+  try {
+    setLoadingEnseignants(true);
+    const token = localStorage.getItem("token");
+    
+    const response = await axios.get("http://localhost:5000/teachers", {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       }
-    };
+    });
 
-    fetchData();
-  }, []);
+    // Vérification approfondie
+    if (response.status === 200 && response.data?.model) {
+      if (Array.isArray(response.data.model)) {
+        setEnseignants(response.data.model);
+      } else {
+        throw new Error("Le format des données est invalide");
+      }
+    } else {
+      throw new Error("Réponse serveur inattendue");
+    }
+
+  } catch (error) {
+    console.error("Détails techniques :", {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    message.error("Erreur de format de données");
+    setEnseignants([]);
+  } finally {
+    setLoadingEnseignants(false);
+  }
+};
+  // Récupération des données principales
+  const fetchData = async () => {
+    try {
+      const [matieresRes, competencesRes] = await Promise.all([
+        axios.get("http://localhost:5000/matieres", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get("http://localhost:5000/Competences", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      let filteredMatieres = matieresRes.data;
+
+      // Filtrage pour les enseignants
+      if (user?.role === "enseignant") {
+        filteredMatieres = matieresRes.data.filter(matiere => {
+          const enseignantId = matiere.enseignant?._id?.toString() 
+            || matiere.enseignant?.toString();
+          return enseignantId === user._id && matiere.publiee;
+        });
+      }
+
+      // Filtrage pour les étudiants
+      if (user?.role === "etudiant") {
+        filteredMatieres = matieresRes.data.filter(matiere => {
+          return (
+            matiere.publiee &&
+            matiere.semestre?.toString() === user.semestre?.toString() &&
+            matiere.niveau?.toString() === user.niveau?.toString()
+          );
+        });
+      }
+
+      setState(prev => ({
+        ...prev,
+        data: filteredMatieres.map(item => ({
+          ...item,
+          key: item._id,
+          competences: item.competences || [],
+        })),
+        competences: competencesRes.data,
+        loading: false,
+      }));
+
+    } catch (err) {
+      console.error("Erreur global fetch:", err);
+      setState(prev => ({ 
+        ...prev, 
+        error: err.response?.data?.message || "Erreur serveur",
+        loading: false 
+      }));
+      message.error("Échec du chargement des données");
+    }
+  };
+
+  const fetchAllData = async () => {
+    await fetchEnseignants();
+    await fetchData();
+  };
+
+  fetchAllData();
+}, []); // Ajouter les dépendances nécessaires si l'utilisateur peut changer
+
+
+
+
   
 
   const handleUpdateAvancement = async (
@@ -219,14 +277,14 @@ const Matieres = () => {
 
           {userRole === "admin" && (
             <>
-              <Button onClick={() => handleEdit(record)}>Modifier</Button>
+              <Button onClick={() => handleEdit(record)} icon={<EditOutlined/>}></Button>
               <Popconfirm
                 title="Confirmer la suppression ?"
                 onConfirm={() => handleDelete(record)}
                 okText="Oui"
                 cancelText="Non"
               >
-                <Button danger>Supprimer</Button>
+                <Button icon={<DeleteOutlined/>}></Button>
               </Popconfirm>
               <Button
                 icon={
@@ -247,8 +305,13 @@ const Matieres = () => {
     },
   ];
 
-  // Affichage des détails
-  const showDetails = (record) => {
+
+const showDetails = async (record) => {
+  try {
+    const data = await fetchMatiereById(record._id);
+    setSelectedMatiereForDetails(data);
+    setIsDetailsModalOpen(true);
+
     const getStatusColor = (status) =>
       ({
         Terminee: "green",
@@ -256,9 +319,9 @@ const Matieres = () => {
       }[status] || "gray");
 
     const renderCurriculum = () => {
-      if (!record.Curriculum?.length) return <p>Aucun curriculum défini</p>;
+      if (!data.Curriculum?.length) return <p>Aucun curriculum défini</p>;
 
-      return record.Curriculum.map((chapitre, index) => (
+      return data.Curriculum.map((chapitre, index) => (
         <div key={index} className="curriculum-chapitre">
           <h4>
             Chapitre {index + 1}: {chapitre.titreChapitre}
@@ -301,44 +364,138 @@ const Matieres = () => {
       ));
     };
 
+    const historyColumns = [
+      {
+        title: "Date",
+        dataIndex: "dateModification",
+        key: "date",
+        render: (date) => new Date(date).toLocaleString(),
+        sorter: (a, b) => new Date(a.date) - new Date(b.date),
+      },
+   {
+  title: "Modifications",
+  key: "modifications",
+  render: (_, entry) => {
+    const ancienne = entry.ancienneValeur || {};
+    const nouvelle = entry.nouvelleValeur || {};
+
+    // Filtrer les champs modifiés, en excluant 'Curriculum'
+    const champsModifies = Object.keys({ ...ancienne, ...nouvelle }).filter(
+      (key) =>
+        key !== "Curriculum" &&
+        JSON.stringify(ancienne[key]) !== JSON.stringify(nouvelle[key])
+    );
+
+    if (champsModifies.length === 0) return <span>Aucune modification</span>;
+
+    return (
+      <ul className="changes-list">
+        {champsModifies.map((key) => (
+          <li key={key}>
+            <strong>{key}:</strong>{" "}
+            <span style={{ color: "red", textDecoration: "line-through", marginRight: "8px" }}>
+              {JSON.stringify(ancienne[key])}
+            </span>
+            →
+            <span style={{ color: "green", marginLeft: "8px" }}>
+              {JSON.stringify(nouvelle[key])}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+}
+
+
+
+    ]
+
     Modal.info({
-      title: `Détails de ${record.Nom}`,
-      width: 800,
+      title: `Détails de ${data.Nom}`,
+      width: 1000,
       content: (
         <div className="matiere-details">
           <h2>
-            {record.Nom} ({record.CodeMatiere})
+            {data.Nom} ({data.CodeMatiere})
           </h2>
+
           <div className="infos-grid">
-
-            <div><strong>Crédits:</strong> {record.Credit}</div>
-            <div><strong>Volume Horaire:</strong> {record.VolumeHoraire}h</div>
-            <div><strong>Niveau:</strong> {record.Niveau}</div>
-            <div><strong>Semestre:</strong> {record.Semestre}</div>
-            <div><strong>Coefficient:</strong> {record.Coefficient}</div>
-            <div><strong>NbHeuresCours:</strong> {record.NbHeuresCours}</div>
-            <div><strong>NbHeuresTD:</strong> {record.NbHeuresTD}</div>
-            <div><strong>NbHeuresTP:</strong> {record.NbHeuresTP}</div>
-            <div><strong>Année:</strong> {record.Annee}</div>
-
+            <div>
+              <strong>Crédits:</strong> {data.Credit}
+            </div>
+            <div>
+              <strong>Volume Horaire:</strong> {data.VolumeHoraire}h
+            </div>
+            <div>
+              <strong>Niveau:</strong> {data.niveau}
+            </div>
+            <div>
+              <strong>Semestre:</strong> {data.semestre}
+            </div>
+            <div>
+              <strong>Coefficient:</strong> {data.Coefficient}
+            </div>
+            <div>
+              <strong>Heures de cours:</strong> {data.NbHeuresCours}
+            </div>
+            <div>
+              <strong>Heures de TD:</strong> {data.NbHeuresTD}
+            </div>
+            <div>
+              <strong>Heures de TP:</strong> {data.NbHeuresTP}
+            </div>
+            <div>
+              <strong>Enseignant:</strong>{" "}
+              {data.enseignant?.nom || data.enseignant}
+            </div>
+            <div>
+              <strong>Année:</strong> {data.Annee}
+            </div>
           </div>
 
           <h3>Compétences associées</h3>
           <ul>
-            {record.competences.map((c, i) => (
-              <li key={i}>
-                {c.nomCompetence} : {c.codeCompetence}
-              </li>
-            ))}
+            {data.competences?.length > 0 ? (
+              data.competences.map((c, i) => (
+                <li key={i}>
+                  {c.nomCompetence} : {c.codeCompetence}
+                </li>
+              ))
+            ) : (
+              <li>Aucune compétence associée</li>
+            )}
           </ul>
 
           <h3>Curriculum</h3>
           <div className="curriculum-container">{renderCurriculum()}</div>
+
+          {(userRole === "admin" || userRole === "enseignant") && (
+            <>
+              <h3 style={{ marginTop: 24 }}>Historique des modifications</h3>
+              <Table
+                columns={historyColumns}
+                dataSource={data.historiqueModifications || []}
+                rowKey="_id"
+                pagination={{ pageSize: 5 }}
+                scroll={{ y: 240 }}
+                bordered
+                locale={{
+                  emptyText: "Aucune modification enregistrée",
+                }}
+              />
+            </>
+          )}
         </div>
       ),
     });
-  };
+  } catch (error) {
+    console.error("Erreur lors de la récupération des détails:", error);
+  }
+};
 
+
+ 
   // Gestion des modifications
   const handleEdit = (record) => {
     setState((prev) => ({
@@ -423,6 +580,7 @@ const Matieres = () => {
           NbHeuresCours: Number(values.NbHeuresCours),
           NbHeuresTD: Number(values.NbHeuresTD),
           NbHeuresTP: Number(values.NbHeuresTP),
+          enseignant:values.enseignant,
           Annee: Number(values.Annee),
           Credit: Number(values.Credit),
           publiee: values.publiee,
@@ -667,30 +825,52 @@ const Matieres = () => {
         {/* Section Organisation */}
         <div className="form-section">
           <Form.Item
-            name="Niveau"
-            label="Niveau"
+            name="niveau"
+            label="niveau"
             rules={[{ required: true, message: "Sélection obligatoire" }]}
           >
             <Select disabled={userRole === "enseignant"}>
-              <Option value="1ING">1ère année</Option>
-              <Option value="2ING">2ème année</Option>
-              <Option value="3ING">3ème année</Option>
+              <Option value="1">1ère année</Option>
+              <Option value="2">2ème année</Option>
+              <Option value="3">3ème année</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
-            name="Semestre"
-            label="Semestre"
+            name="semestre"
+            label="semestre"
             rules={[{ required: true, message: "Sélectionnez un semestre" }]}
           >
             <Select disabled={userRole === "enseignant"}>
               <Option value="S1">S1</Option>
               <Option value="S2">S2</Option>
-              <Option value="S3">S3</Option>
-              <Option value="S4">S4</Option>
-              <Option value="S5">S5</Option>
+              
             </Select>
           </Form.Item>
+        <Form.Item
+  name="enseignant"
+  label="Enseignant"
+  rules={[{ required: true, message: "Sélection obligatoire" }]}
+>
+  <Select
+    loading={loadingEnseignants}
+    placeholder={loadingEnseignants ? "Chargement..." : "Sélectionnez un enseignant"}
+  >
+    {/* Vérification du type avant map */}
+    {Array.isArray(enseignants) && enseignants.map(ens => (
+      <Select.Option key={ens._id} value={ens._id}>
+        {ens.nom} {ens.prenom}
+      </Select.Option>
+    ))}
+    
+    {/* Fallback si tableau vide */}
+    {enseignants.length === 0 && !loadingEnseignants && (
+      <Select.Option disabled value="none">
+        Aucun enseignant trouvé
+      </Select.Option>
+    )}
+  </Select>
+</Form.Item>
 
           <Form.Item
             name="Annee"
