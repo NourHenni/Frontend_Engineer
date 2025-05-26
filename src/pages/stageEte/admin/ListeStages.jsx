@@ -406,12 +406,7 @@ const [publishing, setPublishing] = useState(false);
     >
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
         <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <Title
-            level={3}
-            style={{ marginBottom: 0, color: colors.text, fontWeight: 600 }}
-          >
-            Gestion des stages d'été
-          </Title>
+         
 
           <Card
             bordered={false}

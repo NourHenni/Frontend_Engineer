@@ -69,7 +69,8 @@ function StageEte() {
   const [niveau, setNiveau] = useState("premiereannee");
   const [assignedStages, setAssignedStages] = useState([]);
   const [loadingStages, setLoadingStages] = useState(false);
-  const [currentYear, setCurrentYear] = useState("");
+  const [anneeChoisie, setAnneeChoisie] = useState("");
+   const [annee, setAnnee] = useState("");
   const navigate = useNavigate();
   const [filteredStages, setFilteredStages] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -89,51 +90,32 @@ function StageEte() {
   }, []);
 
   useEffect(() => {
-    const fetchStages = async () => {
-      if (userRole === "enseignant") {
-        setLoadingStages(true);
-        try {
-          const token = localStorage.getItem("token");
-          const response = await getAssignedStages(niveau, token);
+  const fetchStages = async () => {
+    if (userRole === "enseignant") {
+      setLoadingStages(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await getAssignedStages(niveau, token);
+        console.log("API Response:", response); 
 
-          console.log("API Response:", response);
-          
-          if (response.success) {
-            setAssignedStages(response.stages);
-            setFilteredStages(response.stages);
-            if (response.stages.length > 0) {
-              setCurrentYear(response.stages[0].anneeStage);
-            }
-          }
-        } catch (error) {
-          message.error(error.message || "Erreur lors du chargement des stages");
-        } finally {
-          setLoadingStages(false);
-        }
+        // Modification ici ↓
+        const stagesData = Array.isArray(response) ? response : response.stages || response.data || [];
+        const annee = response.anneeChoisie || new Date().getFullYear();
+
+        setAssignedStages(stagesData);
+        setFilteredStages(stagesData);
+        setAnneeChoisie(annee.toString());
+        
+      } catch (error) {
+        message.error(error.response?.data?.message || "Erreur lors du chargement des stages");
+      } finally {
+        setLoadingStages(false);
       }
-    };
-
-    fetchStages();
-  }, [niveau, userRole]);
-
-  const refreshData = () => {
-    setSearchText("");
-    const token = localStorage.getItem("token");
-    getAssignedStages(niveau, token)
-      .then(response => {
-        if (response.success) {
-          setAssignedStages(response.stages);
-          setFilteredStages(response.stages);
-          if (response.stages.length > 0) {
-            setCurrentYear(response.stages[0].anneeStage);
-          }
-          message.success("Données actualisées avec succès");
-        }
-      })
-      .catch(error => {
-        message.error("Erreur lors de l'actualisation des données");
-      });
+    }
   };
+
+  fetchStages();
+}, [niveau, userRole]);
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -153,7 +135,11 @@ function StageEte() {
     { label: "Nom de l'Entreprise", name: "nomEntreprise", type: "input", rules: [{ required: true }] },
     { label: "Période du stage", name: "periode", type: "rangeDate", rules: [{ required: true }] },
     { label: "Année du stage", name: "anneeStage", type: "input", rules: [{ required: true }] },
-    { label: "Niveau", name: "niveau", type: "select", options: [
+    { 
+      label: "Niveau", 
+      name: "niveau", 
+      type: "select", 
+      options: [
         { label: "Première Année", value: "premiereannee" },
         { label: "Deuxième Année", value: "deuxiemeannee" },
       ],
@@ -186,6 +172,7 @@ function StageEte() {
       formData.append("rapport", values.rapport[0].originFileObj);
       formData.append("attestation", values.attestation[0].originFileObj);
       formData.append("ficheEvaluation", values.ficheEvaluation[0].originFileObj);
+      
       const response = await postInternship(values.niveau, formData, localStorage.getItem("token"));
       message.success(response.message);
 
@@ -204,18 +191,35 @@ function StageEte() {
 
   const renderStudentView = () => (
     <>
-      <Card title="Dépôt de stage d'été" bordered={false} className="depot-card" extra={
-        <Button type="primary" text="Déposer un sujet" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} className="depot-button" />
-      }>
+      <Card 
+        title="Dépôt de stage d'été" 
+        bordered={false} 
+        className="depot-card" 
+        extra={
+          <Button 
+            type="primary" 
+            text="Déposer un sujet" 
+            icon={<PlusOutlined />} 
+            onClick={() => setIsModalOpen(true)} 
+            className="depot-button" 
+          />
+        }
+      >
         <Row gutter={[24, 24]}>
           <Col span={24}>
-            <Alert message="Instructions importantes" description={
-              <>
-                <p><InfoCircleOutlined /> Tous les champs sont obligatoires</p>
-                <p><InfoCircleOutlined /> Les fichiers doivent être au format PDF</p>
-                <p><InfoCircleOutlined /> Maximum 2 dépôts autorisés par étudiant</p>
-              </>
-            } type="info" showIcon closable />
+            <Alert 
+              message="Instructions importantes" 
+              description={
+                <>
+                  <p><InfoCircleOutlined /> Tous les champs sont obligatoires</p>
+                  <p><InfoCircleOutlined /> Les fichiers doivent être au format PDF</p>
+                  <p><InfoCircleOutlined /> Maximum 2 dépôts autorisés par étudiant</p>
+                </>
+              } 
+              type="info" 
+              showIcon 
+              closable 
+            />
           </Col>
 
           <Col span={24}>
@@ -230,6 +234,7 @@ function StageEte() {
       </Card>
 
       {successData && <SuccessAlert onClose={() => setSuccessData(null)} stageDetails={successData} />}
+      
       <FormModal
         isModalOpen={isModalOpen} 
         setIsModalOpen={setIsModalOpen} 
@@ -270,7 +275,12 @@ function StageEte() {
             <ListeStages />
           </Card>
 
-          <Card title="Statistiques et actions" bordered={false} className="depot-card" style={{ marginTop: 24 }}>
+          <Card 
+            title="Statistiques et actions" 
+            bordered={false} 
+            className="depot-card" 
+            style={{ marginTop: 24 }}
+          >
             <Row gutter={[24, 24]}>
               <Col span={8}>
                 <Card bordered={false} className="stat-card">
@@ -322,6 +332,23 @@ function StageEte() {
       border: "#e9ecef"
     };
 
+    const getFileIcon = (fileName) => {
+      if (!fileName) return null;
+      const extension = fileName.split('.').pop().toLowerCase();
+      switch (extension) {
+        case 'pdf':
+          return <FilePdfOutlined style={{ color: '#FF0000' }} />;
+        case 'doc':
+        case 'docx':
+          return <FileWordOutlined style={{ color: '#2B579A' }} />;
+        case 'xls':
+        case 'xlsx':
+          return <FileExcelOutlined style={{ color: '#217346' }} />;
+        default:
+          return <FileOutlined />;
+      }
+    };
+
     const columns = [
       {
         title: "Titre",
@@ -368,7 +395,7 @@ function StageEte() {
         render: (text) => (
           <Tag 
             color={
-              text === "validé" ? "green" : 
+              text === "Valide" ? "green" : 
               text === "en attente" ? "orange" : 
               "red"
             }
@@ -396,41 +423,114 @@ function StageEte() {
       }
     ];
 
+    const renderTableContent = () => {
+      console.log("Filtered stages:", filteredStages); 
+      if (loadingStages) {
+        return (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: 40,
+            minHeight: 300,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+          }}>
+            <Spin size="large" />
+          </div>
+        );
+      }
+
+      if (filteredStages.length > 0) {
+         console.log("Rendering table with data:", filteredStages);
+        return (
+          <Table
+            columns={columns}
+            dataSource={filteredStages}
+            rowKey={(record) => record?._id || record?.id || Math.random()}
+            onRow={(record) => ({
+              onClick: () => navigate(`/internship/${niveau}/${record._id}`),
+              style: { cursor: 'pointer' } 
+            })}
+            pagination={{ 
+              pageSize: 8, 
+              showSizeChanger: false,
+              position: ['bottomCenter'],
+              showTotal: (total) => `${total} stages au total`,
+              className: "custom-pagination"
+            }}
+            scroll={{ x: 'max-content' }}
+            size="middle"
+            className="custom-table"
+          />
+        );
+      }
+
+      return (
+        <Empty
+          description={
+            <Text style={{ color: colors.text }}>
+              {anneeChoisie 
+                ? `Aucun stage trouvé pour ${niveau === 'premiereannee' ? 'la 1ère année' : 'la 2ème année'}  cette année`
+                : "Aucun stage trouvé pour les critères sélectionnés"}
+            </Text>
+          }
+          style={{ padding: 40 }}
+        />
+      );
+    };
+
     return (
-      <div style={{ padding: 24, minHeight: "100vh" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ 
+        padding: 24, 
+        backgroundColor: colors.background,
+        minHeight: "100vh"
+      }}>
+        <div style={{ 
+          maxWidth: 1400, 
+          margin: "0 auto"
+        }}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Title level={3} style={{ marginBottom: 0 }}>
-              Mes stages assignés
+            <Title 
+              level={3} 
+              style={{ 
+                marginBottom: 0,
+                color: colors.text,
+                fontWeight: 600
+              }}
+            >
+              Mes stages de l'année courante
             </Title>
             
-            <Card bordered={false} bodyStyle={{ padding: 16 }}>
+            <Card 
+              bordered={false} 
+              style={{ 
+                boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
+                borderRadius: 8,
+                backgroundColor: colors.card
+              }}
+              bodyStyle={{ padding: 16 }}
+            >
               <Space size="middle" align="center" wrap>
                 <Space>
-                  <Text strong>Niveau :</Text>
+                  <Text strong style={{ color: colors.text }}>Niveau :</Text>
                   <Select 
                     value={niveau} 
                     onChange={setNiveau}
                     style={{ width: 180 }}
+                    size="middle"
+                    className="custom-select"
                   >
                     <Option value="premiereannee">Première Année</Option>
                     <Option value="deuxiemeannee">Deuxième Année</Option>
                   </Select>
+                  
+                  {annee && (
+                    <Text strong style={{ color: colors.text, marginLeft: 16 }}>
+                      Année : {annee}
+                    </Text>
+                  )}
                 </Space>
                 
-                <Space>
-                  <Text strong>Année :</Text>
-                  <Badge 
-                    count={currentYear || "N/A"} 
-                    style={{ 
-                      backgroundColor: '#1890ff',
-                      fontSize: 14,
-                      padding: '4px 8px',
-                      borderRadius: 4
-                    }} 
-                  />
-                </Space>
-
                 <Input
                   placeholder="Rechercher un stage..."
                   prefix={<SearchOutlined />}
@@ -438,67 +538,21 @@ function StageEte() {
                   value={searchText}
                   style={{ width: 300 }}
                   allowClear
+                  className="custom-input"
                 />
-
-                <Button 
-                  icon={<ReloadOutlined />} 
-                  onClick={refreshData}
-                >
-                  Actualiser
-                </Button>
               </Space>
             </Card>
-      
-            <Card bordered={false} bodyStyle={{ padding: 0 }}>
-              {loadingStages ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: 40,
-                  minHeight: 300,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center"
-                }}>
-                  <Spin size="large" tip="Chargement des stages..." />
-                </div>
-              ) : filteredStages.length > 0 ? (
-                <Table
-                  columns={columns}
-                  dataSource={filteredStages}
-                  rowKey={(record) => record._id}
-                  onRow={(record) => ({
-                    onClick: () => {
-                      navigate(`/internship/${niveau}/${record._id}`);
-                    },
-                    style: { 
-                      cursor: 'pointer',
-                      ':hover': {
-                        backgroundColor: '#f5f5f5'
-                      }
-                    } 
-                  })}
-                  pagination={{ 
-                    pageSize: 8, 
-                    showSizeChanger: false,
-                    position: ['bottomCenter'],
-                    showTotal: (total) => `${total} stages au total`
-                  }}
-                  scroll={{ x: 'max-content' }}
-                />
-              ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={
-                    <Text>
-                      {searchText ? 
-                        "Aucun stage ne correspond à votre recherche" : 
-                        `Aucun stage trouvé pour ${niveau === "premiereannee" ? "la première année" : "la deuxième année"} ${currentYear ? `en ${currentYear}` : ''}`
-                      }
-                    </Text>
-                  }
-                  style={{ padding: 40 }}
-                />
-              )}
+            
+            <Card 
+              bordered={false} 
+              style={{ 
+                boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
+                borderRadius: 8,
+                backgroundColor: colors.card
+              }}
+              bodyStyle={{ padding: 0 }}
+            >
+              {renderTableContent()}
             </Card>
           </Space>
         </div>
@@ -515,7 +569,11 @@ function StageEte() {
       case "enseignant":
         return renderTeacherView();
       default:
-        return <div className="access-denied-card"><h1>Rôle non défini</h1></div>;
+        return (
+          <div className="access-denied-card">
+            <h1>Rôle non défini</h1>
+          </div>
+        );
     }
   };
 

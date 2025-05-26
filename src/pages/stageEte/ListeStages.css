@@ -91,3 +91,46 @@
 .period-actions button:hover {
   transform: scale(1.1);
 }
+/* ListeStages.css */
+
+.custom-select .ant-select-selector {
+  border-radius: 6px !important;
+}
+
+.ant-table-row {
+  transition: background-color 0.2s;
+}
+
+.ant-table-row:hover {
+  background-color: #f8fafc !important;
+}
+
+.ant-card {
+  transition: box-shadow 0.3s;
+}
+
+.ant-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.ant-btn {
+  transition: all 0.2s;
+}
+
+.ant-modal-content {
+  border-radius: 12px !important;
+}
+
+.ant-list-item {
+  transition: background-color 0.2s;
+}
+
+@media (max-width: 768px) {
+  .ant-space {
+    gap: 8px !important;
+  }
+  
+  .ant-card-body {
+    padding: 12px !important;
+  }
+}

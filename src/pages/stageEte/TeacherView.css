@@ -133,3 +133,78 @@
   text-align: center;
   padding: 40px;
 }
+
+/* Conteneur principal */
+.stage-details-container {
+  width: 95%;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-size: 16px;
+}
+
+/* En-tête */
+.header {
+  padding: 20px 0;
+  margin-bottom: 20px;
+}
+
+.main-title {
+  font-size: 28px !important;
+  margin-top: 10px !important;
+}
+
+.back-button {
+  font-size: 16px !important;
+}
+
+/* Cartes d'information */
+.info-card {
+  font-size: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.info-card .ant-card-head {
+  font-size: 20px !important;
+  padding: 16px 24px !important;
+}
+
+.info-card .ant-card-body {
+  padding: 20px 24px !important;
+}
+
+/* Descriptions */
+.ant-descriptions-item-label {
+  font-size: 16px !important;
+}
+
+.ant-descriptions-item-content {
+  font-size: 16px !important;
+}
+
+.stage-title {
+  font-size: 18px !important;
+  font-weight: 500 !important;
+}
+
+/* Tags */
+.ant-tag {
+  font-size: 15px !important;
+  padding: 6px 12px !important;
+}
+
+/* Boutons */
+.ant-btn {
+  font-size: 16px !important;
+  height: auto !important;
+  padding: 8px 16px !important;
+}
+
+/* Section soutenance */
+.soutenance-row {
+  margin-top: 30px !important;
+}
+
+.defense-link {
+  font-size: 16px !important;
+}

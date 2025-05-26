@@ -197,3 +197,45 @@
     flex-direction: column;
   }
 }
+
+.stage-details-container {
+  width: 90%; /* ou une valeur fixe comme 1000px */
+  max-width: 1200px; /* pour limiter la largeur sur grands écrans */
+  margin: 0 auto; /* centrer le conteneur */
+  font-size: 16px; /* taille de base plus grande */
+}
+
+.header-section {
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.main-title {
+  font-size: 24px !important; /* taille du titre principale */
+}
+
+.status-section {
+  display: flex;
+  gap: 20px; /* espace entre les éléments de statut */
+  margin-top: 25px;
+}
+
+.status-item {
+  font-size: 100px; /* taille du texte plus grande */
+}
+
+.status-item .ant-tag {
+  font-size: 16px; /* taille du tag */
+  padding: 4px 8px; /* légèrement plus grand */
+}
+.main-title .anticon-book {
+  font-size: 28px; /* taille de l'icône */
+  margin-right: 10px;
+}
+
+.ant-tag {
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}

@@ -97,12 +97,16 @@ const StageDetails = () => {
         <div className="status-section">
           <div className="status-item">
             <Text strong>Sujet :</Text>
-            <Tag color="error" className="status-tag">Non valide</Tag>
+             <Tag color={stageDetails.stage.statutSujet === "Valide" ? "success" : "error"}>
+                                 {stageDetails.stage.statutSujet}
+                              </Tag>
           </div>
-          <div className="status-item">
-            <Text strong>Statut Dépôt :</Text>
-            <Tag color="warning" className="status-tag">Déposé avec retard</Tag>
-          </div>
+         <div className="status-item">
+  <Text strong>Statut Dépôt :</Text>
+   <Tag color={stageDetails.stage.statutDepot === "Depose" ? "success" : "error"}>
+                       {stageDetails.stage.statutDepot}
+                    </Tag>
+</div>
         </div>
       </div>
 
