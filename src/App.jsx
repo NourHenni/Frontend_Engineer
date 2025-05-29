@@ -130,6 +130,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+               <Route
+                path="/home/StageEte"
+                element={
+                  <ProtectedRoute>
+                    <StageEte />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/planning-stages" element={<PlanningStages />} />
               <Route
   path="/internship/:type/:id"
@@ -175,6 +184,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+               <Route
+                  path="/home/listeSoutenancesPfa"
+                  element={
+                    <ProtectedRoute>
+                      <ListeSoutenance />
+                    </ProtectedRoute>
+                  }
+                />
               <Route
                 path="/home/Matieres"
                 element={
@@ -214,61 +232,7 @@ function App() {
             </>
           )}
 
-          {/* Routes protégées pour enseignants et étudiants */}
-          {token &&
-            (user.role === "enseignant" || user.role === "etudiant") && (
-              <>
-                <Route
-                  path="/home"
-                  element={
-                    <ProtectedRoute>
-                      <HomePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/PFA"
-                  element={
-                    <ProtectedRoute>
-                      <ListePfa />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/listeSoutenancesPfa"
-                  element={
-                    <ProtectedRoute>
-                      <ListeSoutenance />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/Matieres"
-                  element={
-                    <ProtectedRoute>
-                      <Matieres />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/StageEte"
-                  element={
-                    <ProtectedRoute>
-                      <StageEte />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/home/Competences"
-                  element={
-                    <ProtectedRoute>
-                      <Competences />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/planning-stages" element={<PlanningStages />} />
-              </>
-            )}
+         
 
           {/* Profile route only for etudiant */}
           <Route

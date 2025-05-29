@@ -152,6 +152,9 @@ export const updatePeriod = async (id, payload, token) => {
 
 
 export const deletePeriod = (id, token) =>
-  axios.delete(`http://localhost:5000/periode/${id}`, {
+  axios.delete(`http://localhost:5000/internship/periode/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+
+  

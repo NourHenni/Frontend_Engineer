@@ -1,4 +1,4 @@
- import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -6,7 +6,6 @@ import {
   Select,
   Tag,
   message,
-  DatePicker,
   Spin,
   Button,
   Modal,
@@ -26,13 +25,11 @@ import {
   getEnseignants,
   updateAssignedTeacher,
   togglePlanningVisibility,
-} from "../../../services/stageServices";
+} from "../../../services/stageServices"; 
 import {
   SearchOutlined,
   UserOutlined,
   MailOutlined,
-  
-  
   FileOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -42,11 +39,14 @@ import {
   FileSearchOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
-import "../ListeStages.css";
-import dayjs from "dayjs";
+import "../ListeStages.css"; 
+
+
+
 
 const { Option } = Select;
 const { Title, Text } = Typography;
+
 
 const colors = {
   primary: "#1890ff",
@@ -82,103 +82,32 @@ const styles = {
   },
 };
 
-import PeriodManagement from "./PeriodManagement";
-
 function ListeStages() {
-  const [niveau, setNiveau] = useState("premiereannee");
+  // --- États existants --- 
+  const [niveau, setNiveau] = useState(() => localStorage.getItem('stageNiveau') || "premiereannee");
   const [loading, setLoading] = useState(false);
   const [stages, setStages] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false); 
   const [teacherList, setTeacherList] = useState([]);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isPublished, setIsPublished] = useState(false);
- 
-  //const [anneeStage, setanneeStage] = useState("2024-2025");
+  const [availableYears, setAvailableYears] = useState([]);
+  const [anneeStage, setAnneeStage] = useState(() => localStorage.getItem('stageAnnee') || null);
+  const [editLoading, setEditLoading] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
-  const [editLoading, setEditLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    DateDebutDepot: "",
-    DateFinDepot: "",
-  });
+  const [sendingEmail, setSendingEmail] = useState(false); // Assurez-vous que cet état est utilisé
+  const [publishing, setPublishing] = useState(false); // Assurez-vous que cet état est utilisé
+
+  const navigate = useNavigate();
 
   
-  const [formErrors, setFormErrors] = useState({});
-  const navigate = useNavigate();
-  const [anneeStage, setAnneeStage] = useState(dayjs().year().toString());
-
-  const showPeriodModal = () => setModalVisible(true);
-  const [sendingEmail, setSendingEmail] = useState(false);
-const [publishing, setPublishing] = useState(false);
-
-
-  // Un seul useEffect pour le chargement initial
-  useEffect(() => {
-    // Récupérer les préférences sauvegardées si elles existent
-    const savedNiveau = localStorage.getItem('stageNiveau');
-    const savedAnnee = localStorage.getItem('stageAnnee');
-    
-    if (savedNiveau) setNiveau(savedNiveau);
-    if (savedAnnee) setAnneeStage(savedAnnee);
-    
-    // Charger les données
-    fetchStages(savedNiveau || niveau, savedAnnee || dayjs().year().toString());
-  }, []);
-
-  // useEffect pour les changements de critères
-  useEffect(() => {
-    if (niveau && anneeStage) {
-      // Sauvegarder les préférences
-      localStorage.setItem('stageNiveau', niveau);
-      localStorage.setItem('stageAnnee', anneeStage);
-      
-      // Charger les données
-      fetchStages(niveau, anneeStage);
-    }
-  }, [niveau, anneeStage]);
-
-  useEffect(() => {
-    if (stages.length > 0) {
-      const publishedStatus = stages.some((stage) => stage.publie);
-      setIsPublished(publishedStatus);
-    }
-  }, [stages]);
-
- const fetchStages = async (selectedType, selectedYear) => {
-    if (!selectedType || !selectedYear) return;
-    
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await getInternshipsByTypeAndYear(
-        selectedType,
-        selectedYear,
-        token
-      );
-      
-      const stagesData = response.data || [];
-      const stagesAvecPublication = stagesData.map((stage) => ({
-        ...stage,
-        publie: stage.stage.publie,
-      }));
-      
-      setStages(stagesAvecPublication);
-      setIsPublished(stagesAvecPublication.some((stage) => stage.publie));
-    } catch (err) {
-      console.error("Erreur fetchStages:", err);
-      message.error(err.message || "Erreur lors du chargement.");
-      setStages([]);
-      setIsPublished(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const getTeachers = async () => {
-    try {
+  const getTeachers = async () => {  
+       try {
       const token = localStorage.getItem("token");
       const response = await getEnseignants(token);
       setTeacherList(response.data.model || []);
@@ -186,9 +115,9 @@ const [publishing, setPublishing] = useState(false);
       message.error("Erreur lors du chargement des enseignants.");
     }
   };
-
-  const handleAffectation = async () => {
-    if (selectedTeachers.length === 0) {
+ 
+  const handleAffectation = async () => {  
+       if (selectedTeachers.length === 0) {
       return message.warning("Veuillez sélectionner au moins un enseignant.");
     }
 
@@ -202,10 +131,9 @@ const [publishing, setPublishing] = useState(false);
     } catch (err) {
       message.error("Erreur lors de l'affectation.");
     }
-  };
-
-  const handleUpdateAffectation = async () => {
-    if (!selectedStage || !selectedTeacherId) {
+ };
+  const handleUpdateAffectation = async () => { 
+        if (!selectedStage || !selectedTeacherId) {
       return message.warning("Veuillez sélectionner un stage et un enseignant.");
     }
 
@@ -228,10 +156,9 @@ const [publishing, setPublishing] = useState(false);
     } finally {
       setEditLoading(false);
     }
-  };
-
-  const sendPlanningEmail = async () => {
-    if (!niveau) return;
+ };
+  const sendPlanningEmail = async () => {    
+     if (!niveau) return;
 
     setLoading(true);
     try {
@@ -241,7 +168,7 @@ const [publishing, setPublishing] = useState(false);
         `http://localhost:5000/internship/${niveau}/planning/send`,
         { link: planningLink },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+       );
 
       if (response.data.success) {
         message.success("🎉 Planning envoyé avec succès.");
@@ -253,10 +180,9 @@ const [publishing, setPublishing] = useState(false);
     } finally {
       setLoading(false);
     }
-  };
-
-  const togglePublicationStatus = async () => {
-    try {
+};
+  const togglePublicationStatus = async () => {    
+     try {
       setLoading(true);
       const newStatus = !isPublished;
       
@@ -281,14 +207,139 @@ const [publishing, setPublishing] = useState(false);
     } finally {
       setLoading(false);
     }
-  };
+};
 
+
+  
+
+  
+  const fetchStages = useCallback(async (selectedType, selectedYear) => {
+    if (!selectedType || !selectedYear) {
+      console.log("fetchStages called with invalid params, skipping.");
+      setStages([]); 
+      setIsPublished(false);
+      return;
+    }
+
+    console.log(`Fetching stages for type: ${selectedType}, year: ${selectedYear}`);
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await getInternshipsByTypeAndYear(
+        selectedType,
+        selectedYear,
+        token
+      );
+
+      const stagesData = response.data || [];
+     
+      const stagesAvecPublication = stagesData.map((stage) => ({
+        ...stage,
+        
+       
+        publie: stage.publie !== undefined ? stage.publie : stage.stage?.publie, 
+      }));
+
+      setStages(stagesAvecPublication);
+      setIsPublished(stagesAvecPublication.some((stage) => stage.publie));
+
+    } catch (err) {
+      console.error("Erreur fetchStages:", err);
+      if (err.response && err.response.status === 404) {
+        setStages([]);
+        setIsPublished(false);
+        console.log("Aucun stage trouvé (réponse 404 du serveur).");
+      } else {
+        message.error(err.message || "Erreur lors du chargement des stages.");
+        setStages([]);
+        setIsPublished(false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []); 
+
+  // --- useEffect pour le chargement initial des années et de l'année sélectionnée --- 
+  useEffect(() => {
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:5000/internship/years",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        let years = [];
+        if (response.data && response.data.years) {
+          years = response.data.years.sort((a, b) => b - a);
+          setAvailableYears(years);
+        }
+
+        
+        let currentAnnee = anneeStage;
+        if (!currentAnnee) { 
+            const savedAnnee = localStorage.getItem('stageAnnee');
+            if (savedAnnee && years.includes(parseInt(savedAnnee))) {
+                currentAnnee = parseInt(savedAnnee);
+            } else if (years.length > 0) {
+                currentAnnee = years[0];
+                localStorage.setItem('stageAnnee', years[0]);
+            }
+        }
+        
+        if (currentAnnee !== anneeStage) {
+             setAnneeStage(currentAnnee);
+        }
+
+      } catch (error) {
+        console.error("Erreur d'initialisation (années):", error);
+        
+        setAnneeStage(null);
+        setAvailableYears([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initializeData();
+  }, []); 
+
+ 
+  useEffect(() => {
+    if (niveau && anneeStage) {
+      localStorage.setItem('stageNiveau', niveau);
+      localStorage.setItem('stageAnnee', anneeStage);
+      fetchStages(niveau, anneeStage);
+    } else {
+      
+      setStages([]);
+      setIsPublished(false);
+    }
+  }, [niveau, anneeStage, fetchStages]); 
+
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && niveau && anneeStage) {
+        console.log("ListeStages view became visible, re-fetching stages...");
+        fetchStages(niveau, anneeStage);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [niveau, anneeStage, fetchStages]); 
+
+ 
   const filteredTeachers = teacherList.filter((teacher) =>
     `${teacher.nom} ${teacher.prenom}`
       .toLowerCase()
       .includes(searchText.toLowerCase())
   );
 
+  
   const columns = [
     {
       title: "Étudiant",
@@ -297,7 +348,7 @@ const [publishing, setPublishing] = useState(false);
       render: (etudiant) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{ color: colors.text }}>
-            <UserOutlined /> {etudiant.nom} {etudiant.prenom}
+            <UserOutlined /> {etudiant?.nom} {etudiant?.prenom} 
           </Text>
         </Space>
       ),
@@ -306,14 +357,15 @@ const [publishing, setPublishing] = useState(false);
     },
     {
       title: "Titre du Sujet",
-      dataIndex: ["stage", "titreSujet"],
+      
+      dataIndex: ["stage", "titreSujet"], 
       key: "titreSujet",
       ellipsis: true,
       render: (text) => <Text style={{ color: colors.text }}>{text}</Text>,
     },
-    {
+     {
       title: "Statut Dépôt",
-      dataIndex: ["stage", "statutDepot"],
+      dataIndex: ["stage", "statutDepot"], 
       key: "statutDepot",
       render: (statut) => (
         <Tag
@@ -334,7 +386,7 @@ const [publishing, setPublishing] = useState(false);
     },
     {
       title: "Statut Sujet",
-      dataIndex: ["stage", "statutSujet"],
+      dataIndex: ["stage", "statutSujet"], 
       key: "statutSujet",
       render: (statut) => (
         <Tag
@@ -380,7 +432,8 @@ const [publishing, setPublishing] = useState(false);
     },
     {
       title: "Publication",
-      dataIndex: "publie",
+      
+      dataIndex: "publie", 
       key: "publie",
       render: (publie) => (
         <Tag
@@ -394,8 +447,10 @@ const [publishing, setPublishing] = useState(false);
       align: "center",
       width: 120,
     },
+    
   ];
 
+  
   return (
     <div
       style={{
@@ -405,23 +460,17 @@ const [publishing, setPublishing] = useState(false);
       }}
     >
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-         
-
+        <Space direction="vertical" size="large" style={{ width: "100%" }}> 
+          
           <Card
             bordered={false}
-            style={{
-              boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
-              borderRadius: 8,
-              backgroundColor: colors.card,
-            }}
-            bodyStyle={{ padding: 16 }}
+            style={styles.card}
+            bodyStyle={{ padding: '16px 24px' }} 
           >
-            <Space size="middle" align="center" wrap>
+            <Space size="middle" align="center" wrap> 
+              
               <Space>
-                <Text strong style={{ color: colors.text }}>
-                  Niveau :
-                </Text>
+                <Text strong style={{ color: colors.text }}>Niveau :</Text>
                 <Select
                   value={niveau}
                   onChange={setNiveau}
@@ -433,22 +482,27 @@ const [publishing, setPublishing] = useState(false);
                 </Select>
               </Space>
 
+              
               <Space>
-                <Text strong style={{ color: colors.text }}>
-                  Année :
-                </Text>
-                <DatePicker
-  picker="year"
-  value={anneeStage ? dayjs(anneeStage, 'YYYY') : null}
-  onChange={(date) => {
-    setAnneeStage(date ? date.year().toString() : dayjs().year().toString());
-  }}
-  placeholder="Sélectionner une année"
-  style={{ width: 160 }}
-/>
-
+                <Text strong style={{ color: colors.text }}>Année :</Text>
+                <Select
+                  placeholder="Sélectionner..."
+                  style={{ width: 140 }} 
+                  value={anneeStage ? anneeStage.toString() : undefined} 
+                  onChange={(value) => setAnneeStage(parseInt(value))} 
+                  loading={loading && availableYears.length === 0} 
+                  notFoundContent={loading ? <Spin size="small" /> : "Aucune année"} 
+                  size="middle"
+                >
+                  {availableYears.map((year) => (
+                    <Option key={year} value={year.toString()}>
+                      {year}
+                    </Option>
+                  ))}
+                </Select>
               </Space>
 
+              {/* Boutons d'action */}
               <Tooltip title="Affecter des enseignants aux stages">
                 <Button
                   type="primary"
@@ -457,6 +511,8 @@ const [publishing, setPublishing] = useState(false);
                     setIsModalVisible(true);
                     getTeachers();
                   }}
+                  size="middle"
+                   disabled={stages.length === 0}
                 >
                   Affecter enseignants
                 </Button>
@@ -465,44 +521,51 @@ const [publishing, setPublishing] = useState(false);
               <Tooltip title="Modifier les affectations existantes">
                 <Button
                   icon={<EditOutlined />}
+                  type="primary"
                   onClick={() => {
                     setIsEditModalVisible(true);
                     getTeachers();
                   }}
+                   size="middle"
+                    disabled={stages.length === 0}
                 >
                   Modifier affectation
                 </Button>
               </Tooltip>
 
               <Tooltip title="Gérer les périodes de dépôt">
-  <Button
-    type="primary"
-    icon={<EditOutlined />}
-    onClick={() => navigate("/periods/StageEte")}
-  >
-    Gérer périodes
-  </Button>
-</Tooltip>
+                <Button
+                  icon={<EditOutlined />}
+                  type="primary"
+                  onClick={() => navigate("/periods/StageEte")} 
+                   size="middle"
+                >
+                  Gérer périodes
+                </Button>
+              </Tooltip>
 
               <Tooltip title="Envoyer le planning par email">
                 <Button
-                  type="primary"
                   icon={<SendOutlined />}
+                  type="primary"
                   onClick={sendPlanningEmail}
-                  loading={loading}
+                  loading={sendingEmail} 
+                   size="middle"
+                    disabled={stages.length === 0}
                 >
                   Envoyer planning
                 </Button>
               </Tooltip>
 
-              <Tooltip
-                title={isPublished ? "Masquer le planning" : "Publier le planning"}
-              >
+              <Tooltip title={isPublished ? "Masquer le planning" : "Publier le planning"}>
                 <Button
-                  type={isPublished ? "primary" : "danger"}
+                 
+                 type="primary"
                   icon={isPublished ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={togglePublicationStatus}
-                  loading={loading}
+                  loading={publishing} 
+                   size="middle"
+                    disabled={stages.length === 0}
                 >
                   {isPublished ? "Masquer planning" : "Publier planning"}
                 </Button>
@@ -510,53 +573,34 @@ const [publishing, setPublishing] = useState(false);
             </Space>
           </Card>
 
-          <Card
-  bordered={false}
-  style={{
-    boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
-    borderRadius: 8,
-    backgroundColor: colors.card,
-  }}
-  bodyStyle={{ padding: 0 }}
->
-  {loading ? (
-    <div style={{ textAlign: "center", padding: 40, minHeight: 300 }}>
-      <Spin size="large" />
-    </div>
-  ) : stages.length === 0 ? (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "60px 20px",
-        color: "#999",
-        minHeight: 300,
-      }}
-    >
-      <FileSearchOutlined style={{ fontSize: 50, color: "#ccc" }} />
-      <Text
-        type="secondary"
-        style={{ display: "block", marginTop: 20, fontSize: 18 }}
-      >
-        Aucun stage trouvé pour le niveau et l'année sélectionnés.
-      </Text>
-    </div>
-  ) : (
-    <Table
-      columns={columns}
-      dataSource={stages}
-      rowKey={(record) => record.stage._id}
-      onRow={(record) => ({
-        onClick: () => {
-          navigate(`/internship/${niveau}/${record.stage._id}`);
-        },
-        style: { cursor: "pointer" },
-      })}
-      scroll={{ x: "max-content" }}
-      size="middle"
-    />
-  )}
-</Card>
+          {/* --- Card pour la Table --- */}
+          <Card 
+            bordered={false} 
+            style={styles.card} 
+            bodyStyle={{ paddingTop: 0 }} 
+          >
+            <Table
+              columns={columns}
+              dataSource={stages}
+              loading={loading}
+              rowKey={(record) => record._id || record.stage?._id} 
+              scroll={{ x: 1300 }} 
+              style={styles.table}
+              
+              locale={{ 
+                emptyText: (
+                  <Empty description="Aucun stage trouvé pour le niveau et l'année sélectionnés." />
+                )
+              }}
+              size="middle"
+            />
+          </Card>
+        </Space>
+      </div>
 
+      
+      {/* Modal Affectation */}
+      
           <Modal
             title="Affectation des enseignants"
             open={isModalVisible}
@@ -595,7 +639,9 @@ const [publishing, setPublishing] = useState(false);
             </Checkbox.Group>
           </Modal>
 
-          <Modal
+
+      {/* Modal Modification Affectation */}
+                <Modal
             title="Modification des affectations"
             open={isEditModalVisible}
             onOk={handleUpdateAffectation}
@@ -689,10 +735,12 @@ const [publishing, setPublishing] = useState(false);
               </div>
             </div>
           </Modal>
-        </Space>
-      </div>
+
+
+     
     </div>
   );
 }
 
 export default ListeStages;
+

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect , useCallback  } from "react";
 import { 
   message, 
   Card, 
@@ -89,33 +89,53 @@ function StageEte() {
     }
   }, []);
 
-  useEffect(() => {
-  const fetchStages = async () => {
+ const fetchStages = useCallback(async () => {
     if (userRole === "enseignant") {
+      console.log("Fetching assigned stages for teacher..."); // Log
       setLoadingStages(true);
       try {
         const token = localStorage.getItem("token");
-        const response = await getAssignedStages(niveau, token);
-        console.log("API Response:", response); 
+        // Assurez-vous que getAssignedStages est bien importé
+        const response = await getAssignedStages(niveau, token); 
+        console.log("API Response (Teacher View):", response); 
 
-        // Modification ici ↓
         const stagesData = Array.isArray(response) ? response : response.stages || response.data || [];
         const annee = response.anneeChoisie || new Date().getFullYear();
 
         setAssignedStages(stagesData);
-        setFilteredStages(stagesData);
-        setAnneeChoisie(annee.toString());
+        setFilteredStages(stagesData); // Assurez-vous que setFilteredStages est défini
+        setAnneeChoisie(annee.toString()); // Assurez-vous que setAnneeChoisie est défini
         
       } catch (error) {
-        message.error(error.response?.data?.message || "Erreur lors du chargement des stages");
+        message.error(error.response?.data?.message || "Erreur lors du chargement des stages assignés");
       } finally {
         setLoadingStages(false);
       }
     }
-  };
+  }, [niveau, userRole]); 
+   useEffect(() => {
+    fetchStages();
+  }, [fetchStages]);
 
-  fetchStages();
-}, [niveau, userRole]);
+
+   //  Ajoutez le useEffect pour la visibilité
+  useEffect(() => {
+    // Ne rien faire si ce n'est pas la vue enseignant
+    if (userRole !== 'enseignant') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log("Teacher view became visible, re-fetching stages...");
+        fetchStages();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [userRole, fetchStages]);
 
   const handleSearch = (value) => {
     setSearchText(value);
@@ -130,11 +150,51 @@ function StageEte() {
     setFilteredStages(filtered);
   };
 
+
+ 
+
+const validatePdfAndRequired = (_, fileList) => {
+  // Vérifie si le champ est vide
+  if (!fileList || fileList.length === 0) {
+   
+    return Promise.reject(new Error('Ce fichier est obligatoire.')); 
+  }
+  
+  
+  const file = fileList[0];
+  const isPdf = file.type === 'application/pdf' || (file.name && file.name.toLowerCase().endsWith('.pdf'));
+  
+  // Rejette si ce n'est pas un PDF
+  if (!isPdf) {
+    return Promise.reject(new Error('Le fichier doit être au format PDF.'));
+  }
+  
+  // Si le fichier est présent et est un PDF, la validation réussit
+  return Promise.resolve();
+};
+
+
   const formFields = [
     { label: "Titre du Sujet", name: "titreSujet", type: "input", rules: [{ required: true }] },
     { label: "Nom de l'Entreprise", name: "nomEntreprise", type: "input", rules: [{ required: true }] },
-    { label: "Période du stage", name: "periode", type: "rangeDate", rules: [{ required: true }] },
-    { label: "Année du stage", name: "anneeStage", type: "input", rules: [{ required: true }] },
+    
+       { label: "Période du stage", name: "periode", type: "rangeDate", rules: [{ required: true }] },
+   {
+  label: "Année du stage", 
+  name: "anneeStage", 
+  type: "input", 
+  rules: [
+    { 
+      required: true, 
+      message: "L'année du stage est obligatoire." // Message pour le champ requis
+    }, 
+    {
+      pattern: /^\d{4}$/, // Expression régulière pour exactement 4 chiffres
+      message: "L'année doit être composée de 4 chiffres exactement." // Message si le format est incorrect
+    }
+  ]
+},
+   
     { 
       label: "Niveau", 
       name: "niveau", 
@@ -147,9 +207,33 @@ function StageEte() {
     },
     { label: "Nature du sujet", name: "natureSujet", type: "input", rules: [{ required: true }] },
     { label: "Description", name: "description", type: "textarea", rules: [{ required: true }] },
-    { label: "Rapport", name: "rapport", type: "upload", rules: [{ required: true }] },
-    { label: "Attestation", name: "attestation", type: "upload", rules: [{ required: true }] },
-    { label: "Fiche d'évaluation", name: "ficheEvaluation", type: "upload", rules: [{ required: true }] },
+   {
+    label: "Rapport",
+    name: "rapport",
+    type: "upload",
+    rules: [
+      
+      { validator: validatePdfAndRequired } 
+    ]
+  },
+    {
+    label: "Attestation",
+    name: "attestation",
+    type: "upload",
+    rules: [
+     
+      { validator: validatePdfAndRequired } 
+    ]
+  },
+     {
+    label: "Fiche d'évaluation",
+    name: "ficheEvaluation",
+    type: "upload",
+    rules: [
+      
+      { validator: validatePdfAndRequired } 
+    ]
+  },
   ];
 
   useEffect(() => {
@@ -157,37 +241,60 @@ function StageEte() {
   }, [depots]);
 
   const handleSubmit = async (values) => {
-    try {
-      const formData = new FormData();
-      const [dateDebut, dateFin] = values.periode;
-
-      formData.append("titreSujet", values.titreSujet);
-      formData.append("nomEntreprise", values.nomEntreprise);
-      formData.append("dateDebut", dateDebut.format("YYYY-MM-DD"));
-      formData.append("dateFin", dateFin.format("YYYY-MM-DD"));
-      formData.append("anneeStage", values.anneeStage);
-      formData.append("niveau", values.niveau);
-      formData.append("natureSujet", values.natureSujet);
-      formData.append("description", values.description);
-      formData.append("rapport", values.rapport[0].originFileObj);
-      formData.append("attestation", values.attestation[0].originFileObj);
-      formData.append("ficheEvaluation", values.ficheEvaluation[0].originFileObj);
-      
-      const response = await postInternship(values.niveau, formData, localStorage.getItem("token"));
-      message.success(response.message);
-
-      setSuccessData({
-        titreSujet: values.titreSujet,
-        anneeStage: values.anneeStage,
-        niveau: values.niveau,
-        reference: response.reference || "REF-" + Math.floor(Math.random() * 10000)
-      });
-  
-      setIsModalOpen(false);
-    } catch (error) {
-      message.error(error.message || "Échec du dépôt.");
+  try {
+    // Vérification initiale des fichiers (avant de créer FormData)
+    if (!values.rapport || values.rapport.length === 0) {
+      message.error("Le fichier du rapport est manquant.");
+      return; // Arrêter la soumission
     }
-  };
+    if (!values.attestation || values.attestation.length === 0) {
+      message.error("Le fichier de l'attestation est manquant.");
+      return; // Arrêter la soumission
+    }
+    if (!values.ficheEvaluation || values.ficheEvaluation.length === 0) {
+      message.error("Le fichier de la fiche d'évaluation est manquant.");
+      return; // Arrêter la soumission
+    }
+    // Vérification aussi pour la période, au cas où
+    if (!values.periode || values.periode.length !== 2) {
+        message.error("La période de stage est invalide ou manquante.");
+        return;
+    }
+
+    const formData = new FormData();
+    const [dateDebut, dateFin] = values.periode; // Maintenant, on sait que values.periode est un tableau de 2 éléments
+
+    formData.append("titreSujet", values.titreSujet);
+    formData.append("nomEntreprise", values.nomEntreprise);
+    formData.append("dateDebut", dateDebut.format("YYYY-MM-DD"));
+    formData.append("dateFin", dateFin.format("YYYY-MM-DD"));
+    formData.append("anneeStage", values.anneeStage);
+    formData.append("niveau", values.niveau);
+    formData.append("natureSujet", values.natureSujet);
+    formData.append("description", values.description);
+    
+    // Accès sécurisé aux fichiers après vérification
+    formData.append("rapport", values.rapport[0].originFileObj);
+    formData.append("attestation", values.attestation[0].originFileObj);
+    formData.append("ficheEvaluation", values.ficheEvaluation[0].originFileObj);
+      
+    const response = await postInternship(values.niveau, formData, localStorage.getItem("token"));
+    message.success(response.message);
+
+    setSuccessData({
+      titreSujet: values.titreSujet,
+      anneeStage: values.anneeStage,
+      niveau: values.niveau,
+      reference: response.reference || "REF-" + Math.floor(Math.random() * 10000)
+    });
+  
+    setIsModalOpen(false);
+  } catch (error) {
+    console.error("Erreur lors du dépôt:", error); // Log plus détaillé de l'erreur
+    message.error(error.response?.data?.message || error.message || "Échec du dépôt.");
+  }
+};
+
 
   const renderStudentView = () => (
     <>
