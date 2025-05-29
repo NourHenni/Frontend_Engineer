@@ -127,12 +127,11 @@ const handlePlanSoutenance = async () => {
     const lien = values.lien;
 
     const token = localStorage.getItem("token");
+    console.log("Données envoyées :", { type, id, horaire, lien });
+
 
    
-    await axios.post(`http://localhost:5000/internship/${type}/${id}`, { 
-      horaire,
-      lien,
-    }, {
+    await axios.post(`http://localhost:5000/internship/${type}/${id}`, { horaire, lien, jour }, {
       headers: { Authorization: `Bearer ${token}` },
     } );
 
