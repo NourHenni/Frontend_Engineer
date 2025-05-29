@@ -19,8 +19,14 @@ import Pfa from "./pages/pfa/Pfa";
 import ListePfa from "./pages/pfa/listePfas/ListePfa";
 import StudentDetails from "./pages/Users/StudentDetails";
 import TeachersDetails from "./pages/Users/TeachersDetails";
+import Profile from "./pages/Users/Profile";
 import PlanningStages from "./pages/stageEte/PlanningStages";
 import ListeAffectedPfa from "./pages/pfa/listeAffectedPfa/ListeAffectedPfa";
+import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
+import StageDetails from "./pages/stageEte/admin/DetailsStage";
+import PeriodManagement from "./pages/stageEte/admin/PeriodManagement";
+import AffectationView from "./pages/stageEte/student/AffectationView";
+import TeacherDetailsStage from "./pages/stageEte/TeacherDetailsStage";
 
 export const UserContext = createContext();
 
@@ -69,8 +75,9 @@ function App() {
           />
           <Route path="/student/:id" element={<StudentDetails />} />
           <Route path="/teacher/:id" element={<TeachersDetails />} />
+
           {/* Routes protégées pour admin */}
-          {token && user.role === "admin" && (
+          {token && user?.role === "admin" && (
             <>
               <Route
                 path="/home"
@@ -105,6 +112,14 @@ function App() {
                 }
               />
               <Route
+                path="/home/listeSoutenancesPfa"
+                element={
+                  <ProtectedRoute>
+                    <ListeSoutenance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/home/Matieres"
                 element={
                   <ProtectedRoute>
@@ -129,12 +144,29 @@ function App() {
                 }
               />
               <Route path="/planning-stages" element={<PlanningStages />} />
+
+              <Route
+                path="/internship/:type/:id"
+                element={
+                  <ProtectedRoute>
+                    <StageDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/periods/StageEte"
+                element={
+                  <ProtectedRoute>
+                    <PeriodManagement />
+                  </ProtectedRoute>
+                }
+              />
             </>
           )}
 
           {/* Routes protégées pour enseignants et étudiants */}
           {token &&
-            (user.role === "enseignant" || user.role === "etudiant") && (
+            (user?.role === "enseignant" || user?.role === "etudiant") && (
               <>
                 <Route
                   path="/home"
@@ -149,6 +181,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <ListePfa />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/home/listeSoutenancesPfa"
+                  element={
+                    <ProtectedRoute>
+                      <ListeSoutenance />
                     </ProtectedRoute>
                   }
                 />
@@ -176,9 +216,35 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/internship/:type/:id"
+                  element={
+                    <ProtectedRoute>
+                      <TeacherDetailsStage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/planning-stages" element={<PlanningStages />} />
+                <Route
+                  path="/affectation/:type"
+                  element={<AffectationView />}
+                />
               </>
             )}
+
+          {/* Profile route only for etudiant */}
+          <Route
+            path="/home/Profile"
+            element={
+              token && user?.role === "etudiant" ? (
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
 
           {/* Redirection de secours */}
           <Route path="*" element={<Navigate to="/" />} />

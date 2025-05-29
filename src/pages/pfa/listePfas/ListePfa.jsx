@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import ButtonModel from "../../../components/button/Button";
-import Navbar from "../../../components/navbar/Navbar";
-import SidebarLayout from "../../../components/sidebar/Sidebar";
+import Navbar from "../../../components/Navbar/Navbar";
+import SidebarLayout from "../../../components/Sidebar/Sidebar";
 import TableData from "../../../components/table/TableData";
 import { useNavigate } from "react-router-dom";
 import {
@@ -33,6 +33,7 @@ import AddPfa from "../addPFA/AddPfa";
 import PfaSelectionForm from "../choicePFA/ChoicePfa";
 import { UserContext } from "../../../App";
 import {
+  fetchMyPfa,
   fetchMyPfas,
   fetchPfas,
   fetchPublishedPfas,
@@ -42,6 +43,7 @@ import {
 import axios from "axios";
 import UpdatePfa from "../updatePfa/UpdatePfa";
 import ChoicesModal from "../choicesModel/ChoiceModel";
+import { getLastAcademicYear } from "../../../services/appServices";
 
 function ListePfa() {
   const navigate = useNavigate();
@@ -60,11 +62,15 @@ function ListePfa() {
   const [modalVisible, setModalVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [sortByTeacher, setSortByTeacher] = useState(false);
-  const [selectedTechnology, setSelectedTechnology] = useState(""); // Nouveau état pour la technologie sélectionnée
+  const [selectedTechnology, setSelectedTechnology] = useState("");
   const [technologiesList, setTechnologiesList] = useState([]);
   const [hasPublishedPfas, setHasPublishedPfas] = useState(false);
   const [selectedPfaId, setSelectedPfaId] = useState(null);
   const [collapsed, setCollapsed] = useState(true);
+  const [isAffected, setIsAffected] = useState(false);
+  const [selectedYearFilter, setSelectedYearFilter] = useState(null);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
   const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -78,7 +84,6 @@ function ListePfa() {
   const roleToFetcher = {
     admin: fetchPfas,
     enseignant: fetchMyPfas,
-    etudiant: fetchPublishedPfas,
   };
 
   // Fonction pour charger les données
@@ -86,35 +91,114 @@ function ListePfa() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const fetcher = roleToFetcher[user.role];
-        if (fetcher) {
-          const result = await fetcher();
-          setDataPfas(result);
-          console.log("result", result);
-          if (user.role === "etudiant" && (!result || result.length === 0)) {
-            message.info("Pas encore de sujets PFA publiés");
-          }
+        let result = [];
+        let currentAcademicYear = null;
 
-          // Extraire les technologies disponibles à partir des données
-          const technologies = [
-            ...new Set(result.flatMap((pfa) => pfa.technologies)),
-          ];
-          setTechnologiesList(technologies);
-          console.log("technologies", technologies);
+        // 1. Récupérer l'année universitaire actuelle
+        try {
+          const response = await getLastAcademicYear();
+          setCurrentAcademicYear(response.data);
+          currentAcademicYear = response.data;
+          console.log("Current academic year:", currentAcademicYear.year);
+        } catch (error) {
+          console.error("Error getting academic year:", error);
         }
-      } catch (e) {
-        console.error("Erreur de chargement :", e);
+
+        // 2. Récupérer les PFAs selon le rôle
+        if (user.role === "etudiant") {
+          try {
+            result = user.pfa ? await fetchMyPfa() : await fetchPublishedPfas();
+          } catch (error) {
+            if (
+              error.response &&
+              error.response.data &&
+              error.response.data.message === "Pas encore de sujets PFA publiés"
+            ) {
+              message.info(error.response.data.message);
+              result = [];
+            } else {
+              throw error;
+            }
+          }
+        } else {
+          const fetcher = roleToFetcher[user.role];
+          result = fetcher ? await fetcher() : [];
+        }
+
+        // 3. Filtrer pour admin selon année sélectionnée
+        if (user.role === "admin" && selectedYearFilter) {
+          result = result.filter((pfa) => pfa.annee === selectedYearFilter);
+        }
+
+        // 4. Debug : Répartition des PFAs par année
+        const yearCounts = {};
+        result.forEach((pfa) => {
+          yearCounts[pfa.annee] = (yearCounts[pfa.annee] || 0) + 1;
+        });
+        console.log("PFAs by year (before filtering):", yearCounts);
+
+        // 5. Appliquer filtre année universitaire pour les non-admins
+        if (user.role !== "admin" && currentAcademicYear?.year) {
+          const [_, targetYear] = currentAcademicYear.year.split("-");
+          const targetYearNum = parseInt(targetYear, 10);
+
+          console.log(`Filtering PFAs for year: ${targetYearNum}`);
+
+          const initialCount = result.length;
+          result = result.filter((pfa) => {
+            const pfaYear = parseInt(pfa.annee, 10);
+            const matches = pfaYear === targetYearNum;
+            if (!matches) {
+              console.log(`Excluding PFA ${pfa.code_pfa} (year ${pfaYear})`);
+            }
+            return matches;
+          });
+
+          console.log(`Filter result: ${initialCount} → ${result.length} PFAs`);
+        }
+
+        // 6. Enregistrement des PFAs
+        setDataPfas(result);
+
+        // 7. Afficher un message s'il n'y a pas de PFAs pour les étudiants
+        if (user.role === "etudiant" && result.length === 0) {
+          // Ce message sera évité si le backend a déjà envoyé un message via message.info
+          // Donc on ne met rien ici
+        }
+
+        // 8. Mettre à jour la liste des technologies
+        const technologies = [
+          ...new Set(result.flatMap((pfa) => pfa.technologies)),
+        ];
+        setTechnologiesList(technologies);
+      } catch (error) {
+        console.error("Error loading data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user.role]); // Dépend du rôle, donc tu peux l'ajouter dans le tableau de dépendances
+  }, [user.role, user.pfa, selectedYearFilter]);
 
   const refreshData = async () => {
     const data = await fetchPfas();
-    setDataPfas(data); // Mettre à jour l'état avec les données récupérées
+    let filteredData = data;
+
+    if (user.role === "admin") {
+      // If we have a year filter applied, maintain it
+      if (selectedYearFilter) {
+        filteredData = data.filter((pfa) => pfa.annee === selectedYearFilter);
+      }
+      // If no filter is set (shouldn't happen with our default), use academic year
+      else if (currentAcademicYear?.year) {
+        const [_, targetYear] = currentAcademicYear.year.split("-");
+        const targetYearNum = parseInt(targetYear, 10);
+        filteredData = data.filter((pfa) => pfa.annee === targetYearNum);
+      }
+    }
+
+    setDataPfas(filteredData);
   };
   const showModalChoice = () => {
     setIsChoiceModalOpen(true);
@@ -139,18 +223,19 @@ function ListePfa() {
     }
   };
 
-  // Fonction pour gérer la pagination
-  const handlePaginationChangee = (page, pageSize) => {
-    // Mettre à jour la page courante et la taille de la page (implémenter votre logique de pagination)
-  };
-
   // Fonction pour fermer le modal
   const handleCancel = () => {
     setIsModalVisible(false);
   };
   const refreshMyData = async () => {
     const data = await fetchMyPfas();
-    setDataPfas(data); // Mettre à jour l'état avec les données récupérées
+    let filteredData = data;
+    if (currentAcademicYear?.year) {
+      const [_, targetYear] = currentAcademicYear.year.split("-");
+      const targetYearNum = parseInt(targetYear, 10);
+      filteredData = data.filter((pfa) => pfa.annee === targetYearNum);
+    }
+    setDataPfas(filteredData);
   };
 
   const handleShowModal = (record) => {
@@ -162,6 +247,36 @@ function ListePfa() {
     setModalVisible(false);
     setSelectedRecord(null);
   };
+
+  // Fetch available years for admin filter
+  useEffect(() => {
+    if (user.role === "admin") {
+      const fetchData = async () => {
+        try {
+          // Get current academic year first
+          const academicYearResponse = await getLastAcademicYear();
+          setCurrentAcademicYear(academicYearResponse.data);
+
+          // Extract the target year (second part of academic year)
+          const [_, targetYear] = academicYearResponse.data.year.split("-");
+          const targetYearNum = parseInt(targetYear, 10);
+
+          // Get all PFAs and available years
+          const allPfas = await fetchPfas();
+          const years = [...new Set(allPfas.map((pfa) => pfa.annee))].sort(
+            (a, b) => b - a
+          );
+          setAvailableYears(years);
+
+          // Always set filter to the academic year's target year
+          setSelectedYearFilter(targetYearNum);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+      fetchData();
+    }
+  }, [user.role]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -190,7 +305,29 @@ function ListePfa() {
 
     loadData();
   }, [user.role, sortByTeacher]); // Ajoute sortByTeacher dans le tableau de dépendances pour déclencher le rechargement
+  // Add this useEffect hook near your other useEffect hooks
+  useEffect(() => {
+    const applyYearFilter = async () => {
+      if (user.role === "admin") {
+        setLoading(true);
+        try {
+          let result = await fetchPfas(); // Fetch all PFAs
 
+          if (selectedYearFilter) {
+            result = result.filter((pfa) => pfa.annee === selectedYearFilter);
+          }
+
+          setDataPfas(result);
+        } catch (error) {
+          console.error("Error applying year filter:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    applyYearFilter();
+  }, [selectedYearFilter, user.role]);
   const onUpdatePfa = (info) => {
     setIsUpdateModalOpen(true);
     setIsConsulting(false);
@@ -252,6 +389,10 @@ function ListePfa() {
 
   const handleNavigate = () => {
     navigate("/home/listeAffectedPfa");
+  };
+
+  const handleNavigateSoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
   };
 
   const maskedfas = async () => {
@@ -339,7 +480,6 @@ function ListePfa() {
       okText: "Oui",
       onOk: () => {
         return new Promise((resolve, reject) => {
-          // Assurez-vous que le token est bien récupéré du localStorage ou autre source
           const token = localStorage.getItem("token");
 
           if (!token) {
@@ -350,7 +490,7 @@ function ListePfa() {
           axios
             .delete(`http://localhost:5000/pfa/${record._id}`, {
               headers: {
-                Authorization: `Bearer ${token}`, // Inclure le token ici
+                Authorization: `Bearer ${token}`,
               },
             })
             .then(({ data }) => {
@@ -361,12 +501,20 @@ function ListePfa() {
               resolve(data);
             })
             .catch((err) => {
-              message.error("Erreur lors de la suppression du sujet");
+              // Récupérer le message du serveur s’il existe
+              const errorMsg =
+                err.response?.data?.message ||
+                "Une erreur s'est produite lors de la suppression.";
+              message.error(errorMsg); // Affichage dans l’UI
               reject(err);
             });
         });
       },
     });
+  };
+
+  const handleNavigateMySoutenance = () => {
+    navigate("/home/listeSoutenancesPfa");
   };
 
   const columns = [
@@ -465,6 +613,15 @@ function ListePfa() {
       ),
     });
   }
+  if (user.role === "etudiant") {
+    columns.splice(5, 0, {
+      title: "Email Enseignant",
+      dataIndex: "enseignant", // Remplacer "adresseEmail" par "enseignant"
+      key: "adresseEmail",
+      render: (enseignant) =>
+        enseignant ? enseignant.adresseEmail : "Email non disponible",
+    });
+  }
 
   if (user.role === "enseignant") {
     columns.splice(5, 0, {
@@ -539,52 +696,75 @@ function ListePfa() {
             </>
           )}
           {user.role === "enseignant" && (
-            <ButtonModel
-              text="Ajouter un sujet PFA"
-              onClick={showModal}
-              icon={<PlusOutlined />}
-            />
+            <>
+              <ButtonModel
+                text="Ajouter un sujet PFA"
+                onClick={showModal}
+                icon={<PlusOutlined />}
+              />
+              <ButtonModel
+                text="Consulter la liste des soutenances"
+                onClick={handleNavigateSoutenance}
+                icon={<EyeOutlined />}
+              />
+            </>
           )}
           {user.role === "etudiant" &&
             (user.niveau === 2 ? (
-              <>
-                <ButtonModel
-                  text={
-                    sortByTeacher
-                      ? "Désactiver le tri par enseignant"
-                      : "Trier par enseignant"
-                  }
-                  onClick={() => setSortByTeacher(!sortByTeacher)}
-                  icon={<DownOutlined />}
-                />
-                <Select
-                  placeholder="Sélectionner une technologie"
-                  style={{ width: 200 }}
-                  onChange={handleTechnologyFilter}
-                  value={selectedTechnology}
-                  className="custom-select" // Classe personnalisée
-                >
-                  <Select.Option value="">
-                    Toutes les technologies
-                  </Select.Option>
-                  {technologiesList.map((tech, index) => (
-                    <Select.Option key={index} value={tech}>
-                      {tech}
+              user.pfa ? (
+                <>
+                  <ButtonModel
+                    text="Consulter la date de soutenance"
+                    onClick={handleNavigateMySoutenance}
+                    icon={<EyeOutlined />}
+                  />
+                  <Alert
+                    message="Vous avez été affecté à un sujet"
+                    description="Vous pouvez consulter les détails de votre affectation."
+                    type="info"
+                    showIcon
+                  />
+                </>
+              ) : (
+                <>
+                  <ButtonModel
+                    text={
+                      sortByTeacher
+                        ? "Désactiver le tri par enseignant"
+                        : "Trier par enseignant"
+                    }
+                    onClick={() => setSortByTeacher(!sortByTeacher)}
+                    icon={<DownOutlined />}
+                  />
+                  <Select
+                    placeholder="Sélectionner une technologie"
+                    style={{ width: 200 }}
+                    onChange={handleTechnologyFilter}
+                    value={selectedTechnology}
+                    className="custom-select"
+                  >
+                    <Select.Option value="">
+                      Toutes les technologies
                     </Select.Option>
-                  ))}
-                </Select>
+                    {technologiesList.map((tech, index) => (
+                      <Select.Option key={index} value={tech}>
+                        {tech}
+                      </Select.Option>
+                    ))}
+                  </Select>
 
-                <ButtonModel
-                  text="Choisir les sujets Pfas"
-                  onClick={showModal}
-                  icon={<PlusOutlined />}
-                />
-                <ButtonModel
-                  text="Consulter mes choix"
-                  icon={<EyeOutlined />}
-                  onClick={() => setShowMyChoicesModal(true)}
-                />
-              </>
+                  <ButtonModel
+                    text="Choisir les sujets Pfas"
+                    onClick={showModal}
+                    icon={<PlusOutlined />}
+                  />
+                  <ButtonModel
+                    text="Consulter mes choix"
+                    icon={<EyeOutlined />}
+                    onClick={() => setShowMyChoicesModal(true)}
+                  />
+                </>
+              )
             ) : (
               <Alert
                 message="Accès refusé"
@@ -594,7 +774,25 @@ function ListePfa() {
               />
             ))}
         </div>
-
+        {user.role === "admin" && (
+          <>
+            {/* ... other admin buttons ... */}
+            <Select
+              placeholder="Filtrer par année"
+              style={{ width: 200, marginLeft: 10 }}
+              onChange={(value) => setSelectedYearFilter(value)}
+              value={selectedYearFilter}
+              allowClear
+            >
+              <Select.Option value="">Toutes les années</Select.Option>
+              {availableYears.map((year) => (
+                <Select.Option key={year} value={year}>
+                  {year}
+                </Select.Option>
+              ))}
+            </Select>
+          </>
+        )}
         <TableData
           columns={columns}
           data={paginatedData}

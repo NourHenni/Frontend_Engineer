@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Input, Table, Space, Modal, Form, Tag, message, Select, Spin, Alert, Dropdown } from 'antd';
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UndoOutlined, InboxOutlined, DownOutlined } from '@ant-design/icons';
-import Navbar from '../../components/navbar/Navbar';
-import SidebarLayout from '../../components/sidebar/Sidebar';
+import Navbar from '../../components/Navbar/Navbar';
+import SidebarLayout from '../../components/Sidebar/Sidebar';
 import axios from 'axios';
 import './Competences.css';
 import { useContext } from 'react';

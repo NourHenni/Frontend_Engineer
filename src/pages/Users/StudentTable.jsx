@@ -10,6 +10,8 @@ import {
   Modal,
   Upload,
   message,
+  Select,
+  Form,
 } from "antd";
 import {
   SearchOutlined,
@@ -23,26 +25,91 @@ import {
   createStudent,
   updateStudent,
   deleteStudent,
+  updateStudentSituation,
+  batchUpdateStudentSituation,
+  notifyDiplomeStudents,
 } from "../../services/userService";
 import { useNavigate } from "react-router-dom";
 import AddStudentModal from "./AddStudentModal";
 import * as XLSX from "xlsx";
+import { getLastAcademicYear } from "../../services/appServices";
+
+const { Option } = Select;
 
 function StudentTable() {
   const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false); // New state for import loading
+  const [importing, setImporting] = useState(false);
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [userRole, setUserRole] = useState(null); // State to store user role
+  const [isSituationModalVisible, setIsSituationModalVisible] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [userRole, setUserRole] = useState(null);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState("all");
+  const [selectedNiveau, setSelectedNiveau] = useState("all");
+  const [availableYears, setAvailableYears] = useState([]);
+  const [availableNiveaux, setAvailableNiveaux] = useState([]);
+  const [form] = Form.useForm();
   const navigate = useNavigate();
-
+const [lastAcademicYear, setLastAcademicYear] = useState(null);
+  // Get current academic year (e.g., 2024-2025)
+  const getCurrentAcademicYear = () => {
+    const currentYear = new Date().getFullYear();
+    return `${currentYear}-${currentYear + 1}`;
+  };
+  const handleNotifyDiplomeStudents = async () => {
+  try {
+    setLoading(true);
+    const result = await notifyDiplomeStudents();
+    message.success(result.message || "Students notified successfully");
+  } catch (error) {
+    message.error(error.message || "Failed to notify students");
+  } finally {
+    setLoading(false);
+  }
+};
+const fetchLastAcademicYear = async () => {
+  try {
+    const response = await getLastAcademicYear();
+    if (response.success && response.data?.year) {
+      setLastAcademicYear(response.data.year);
+      setSelectedAcademicYear(response.data.year); // Set as default filter
+    }
+  } catch (error) {
+    console.error("Failed to fetch last academic year:", error);
+  }
+};
   const loadStudents = async () => {
     setLoading(true);
     try {
       const students = await fetchStudents();
       setData(students);
+      
+      // Extract available academic years and niveaux from all students
+      const years = new Set();
+      const niveaux = new Set();
+      
+      students.forEach(student => {
+        // Add student's base niveau
+        if (student.niveau) {
+          niveaux.add(student.niveau.toString());
+        }
+        
+        // Add status years and niveaux
+        if (student.academic_statuses && student.academic_statuses.length > 0) {
+          student.academic_statuses.forEach(status => {
+            years.add(status.academic_year);
+            if (status.niveau) {
+              niveaux.add(status.niveau.toString());
+            }
+          });
+        }
+      });
+      
+      setAvailableYears(Array.from(years).sort().reverse());
+      setAvailableNiveaux(Array.from(niveaux).sort());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,40 +119,124 @@ function StudentTable() {
 
   useEffect(() => {
     loadStudents();
-
-    // Decoding the token to get the role
+fetchLastAcademicYear(); // Add this line
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        console.log("Token found:", token); // Debugging: log the token
-
-        // Decode the token (JWT structure: Header.Payload.Signature)
-        const base64Url = token.split(".")[1]; // Get the payload part of the JWT token
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/"); // Adjust URL-safe base64 characters
-        const decodedPayload = JSON.parse(atob(base64)); // Decode and parse the base64 payload
-
-        console.log("Decoded Payload:", decodedPayload); // Debugging: log the decoded payload
-
-        setUserRole(decodedPayload.role); // Assuming 'role' is stored in the token
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const decodedPayload = JSON.parse(atob(base64));
+        setUserRole(decodedPayload.role);
       } catch (error) {
         console.error("Error decoding token", error);
       }
     } else {
-      console.log("No token found in localStorage."); // Debugging: log if no token is found
+      console.log("No token found in localStorage.");
     }
   }, []);
 
   const handleSearch = (value) => setSearchText(value.toLowerCase());
 
-  const filteredData = data.filter((student) =>
-    ["nom", "prenom", "cin", "adresseEmail"].some((key) =>
-      student[key]?.toString().toLowerCase().includes(searchText)
-    )
-  );
+  const getStatusForYear = (student, year) => {
+    if (!student.academic_statuses || year === "all") return null;
+    const status = student.academic_statuses.find(s => s.academic_year === year);
+    return status || null;
+  };
 
-  const handleEdit = (student) => {
-    console.log("Edit student:", student);
-    // TODO: Edit modal logic
+  const filteredData = data
+    .filter(student => {
+      // If "All" is selected for year, show all students
+      if (selectedAcademicYear !== "all") {
+        // Otherwise only show students with status for selected year
+        const hasYearStatus = student.academic_statuses?.some(
+          s => s.academic_year === selectedAcademicYear
+        );
+        if (!hasYearStatus) return false;
+      }
+      
+      // Filter by niveau if not "all"
+      if (selectedNiveau !== "all") {
+        // Check both student's base niveau and status niveaux
+        const status = getStatusForYear(student, selectedAcademicYear);
+        const studentNiveau = status?.niveau || student.niveau;
+        if (studentNiveau?.toString() !== selectedNiveau) return false;
+      }
+      
+      return true;
+    })
+    .filter((student) =>
+      ["nom", "prenom", "cin", "adresseEmail"].some((key) =>
+        student[key]?.toString().toLowerCase().includes(searchText)
+      )
+    )
+    .map(student => {
+      const status = getStatusForYear(student, selectedAcademicYear);
+      return {
+        ...student,
+        currentStatus: status,
+        displayNiveau: status?.niveau || student.niveau || "-",
+        displaySituation: status?.status || "-"
+      };
+    });
+
+  const handleEditSituation = (student) => {
+    setSelectedStudents([student]);
+    setIsSituationModalVisible(true);
+    const status = getStatusForYear(student, selectedAcademicYear);
+    form.setFieldsValue({
+      nouvelleSituation: status?.status || "passe",
+      anneeAcademique: selectedAcademicYear === "all" ? getCurrentAcademicYear() : selectedAcademicYear,
+      niveau: status?.niveau || student.niveau
+    });
+  };
+
+  const handleBatchUpdateClick = () => {
+    if (selectedStudents.length === 0) {
+      message.warning("Please select at least one student");
+      return;
+    }
+    setIsSituationModalVisible(true);
+    form.setFieldsValue({
+      nouvelleSituation: "passe",
+      anneeAcademique: selectedAcademicYear === "all" ? getCurrentAcademicYear() : selectedAcademicYear,
+      niveau: selectedNiveau === "all" ? "" : selectedNiveau
+    });
+  };
+
+  const handleUpdateSituation = async () => {
+    try {
+      const values = await form.validateFields();
+      const studentIds = selectedStudents.map(student => student._id);
+      
+      if (studentIds.length === 1) {
+        await updateStudentSituation(studentIds[0], values);
+      } else {
+        await batchUpdateStudentSituation(studentIds, values);
+      }
+      
+      message.success(
+        studentIds.length === 1
+          ? "Student situation updated successfully"
+          : `${studentIds.length} student situations updated successfully`
+      );
+      
+      setIsSituationModalVisible(false);
+      setSelectedStudents([]);
+      setSelectedRowKeys([]);
+      loadStudents();
+    } catch (err) {
+      message.error("Failed to update situation: " + err.message);
+    }
+  };
+
+  const onSelectChange = (selectedRowKeys, selectedRows) => {
+    setSelectedRowKeys(selectedRowKeys);
+    setSelectedStudents(selectedRows);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
   };
 
   const handleDelete = async (student) => {
@@ -120,9 +271,8 @@ function StudentTable() {
 
   const handleAddStudent = async (newStudent) => {
     try {
-      // You can add any additional logic here if necessary
-      await loadStudents(); // Reload the student list to reflect the new addition
-      setIsModalVisible(false); // Close the modal after adding the student
+      await loadStudents();
+      setIsModalVisible(false);
     } catch (error) {
       message.error("Failed to update student list.");
     }
@@ -130,7 +280,7 @@ function StudentTable() {
 
   const handleImport = (file) => {
     const reader = new FileReader();
-    setImporting(true); // Start loading
+    setImporting(true);
     reader.onload = async (e) => {
       const binaryStr = e.target.result;
       const wb = XLSX.read(binaryStr, { type: "binary" });
@@ -146,7 +296,7 @@ function StudentTable() {
       } catch (err) {
         message.error("Failed to import students: " + err.message);
       } finally {
-        setImporting(false); // Stop loading
+        setImporting(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -173,25 +323,20 @@ function StudentTable() {
       ellipsis: true,
     },
     {
-      title: "Birth Date",
-      dataIndex: "dateDeNaissance",
-      key: "dateDeNaissance",
-      width: 120,
-      render: (text) => (text ? new Date(text).toLocaleDateString() : "-"),
+      title: "Level",
+      dataIndex: "displayNiveau",
+      key: "niveau",
+      width: 80,
+      render: (text) => text || "-",
     },
     {
-      title: "University",
-      dataIndex: "universite",
-      key: "universite",
-      width: 150,
-      ellipsis: true,
-    },
-    {
-      title: "Speciality",
-      dataIndex: "specialite",
-      key: "specialite",
-      width: 150,
-      ellipsis: true,
+      title: "Situation",
+      dataIndex: "displaySituation",
+      key: "situation",
+      width: 100,
+      render: (text) => (
+        <span style={{ textTransform: "capitalize" }}>{text || "-"}</span>
+      ),
     },
     {
       title: "Status",
@@ -200,13 +345,17 @@ function StudentTable() {
       width: 90,
       render: (text) => <span>{text ? "Archived" : "Active"}</span>,
     },
-    // Conditionally render the 'Actions' column based on user role
     userRole === "admin" && {
       title: "Actions",
       key: "actions",
-      width: 120,
+      width: 150,
       render: (_, record) => (
         <Space style={{ justifyContent: "center", width: "100%" }}>
+          <Button
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditSituation(record)}
+          />
           <Button
             size="small"
             danger
@@ -221,7 +370,7 @@ function StudentTable() {
         </Space>
       ),
     },
-  ].filter(Boolean); // Filter out any null or undefined columns
+  ].filter(Boolean);
 
   return (
     <div
@@ -243,31 +392,73 @@ function StudentTable() {
               justifyContent: "space-between",
             }}
           >
-            <Input
-              placeholder="Search by name, CIN, or email"
-              value={searchText}
-              onChange={(e) => handleSearch(e.target.value)}
-              prefix={<SearchOutlined />}
-              style={{ width: 250 }}
-            />
+            <Space>
+              <Input
+                placeholder="Search by name, CIN, or email"
+                value={searchText}
+                onChange={(e) => handleSearch(e.target.value)}
+                prefix={<SearchOutlined />}
+                style={{ width: 250 }}
+              />
+             <Select
+  style={{ width: 180 }}
+  placeholder="Academic year"
+  value={selectedAcademicYear}
+  onChange={setSelectedAcademicYear}
+>
+  <Option value="all">All Years</Option>
+  {availableYears.map(year => (
+    <Option key={year} value={year}>{year}</Option>
+  ))}
+</Select>
+              <Select
+                style={{ width: 120 }}
+                placeholder="Level"
+                value={selectedNiveau}
+                onChange={setSelectedNiveau}
+              >
+                <Option value="all">All Levels</Option>
+                {availableNiveaux.map(niveau => (
+                  <Option key={niveau} value={niveau}>Level {niveau}</Option>
+                ))}
+              </Select>
+            </Space>
             {userRole === "admin" && (
               <>
-                <Button type="primary" onClick={showModal}>
-                  + Add Student
-                </Button>
-                <Upload
-                  accept=".xlsx, .xls, .csv"
-                  disabled={importing}
-                  customRequest={({ file, onSuccess }) => {
-                    handleImport(file);
-                    onSuccess();
-                  }}
-                  showUploadList={false}
-                >
-                  <Button icon={<UploadOutlined />} loading={importing}>
-                    {importing ? "Importing..." : "Import Students"}
+                <Space>
+                  {selectedStudents.length > 0 && (
+                    <Button
+                      type="primary"
+                      onClick={handleBatchUpdateClick}
+                      disabled={selectedStudents.length === 0}
+                    >
+                      Update Selected ({selectedStudents.length})
+                    </Button>
+                  )}
+                  <Button type="primary" onClick={showModal}>
+                    + Add Student
                   </Button>
-                </Upload>
+                  <Button 
+  type="primary" 
+  onClick={handleNotifyDiplomeStudents}
+  loading={loading}
+>
+  Notify Old Students
+</Button>
+                  <Upload
+                    accept=".xlsx, .xls, .csv"
+                    disabled={importing}
+                    customRequest={({ file, onSuccess }) => {
+                      handleImport(file);
+                      onSuccess();
+                    }}
+                    showUploadList={false}
+                  >
+                    <Button icon={<UploadOutlined />} loading={importing}>
+                      {importing ? "Importing..." : "Import Students"}
+                    </Button>
+                  </Upload>
+                </Space>
               </>
             )}
           </Space>
@@ -276,10 +467,75 @@ function StudentTable() {
             isModalVisible={isModalVisible}
             handleCancel={handleCancel}
             handleAddStudent={handleAddStudent}
-            loadStudents={loadStudents}  // Pass loadStudents as a prop
+            loadStudents={loadStudents}
           />
 
+          <Modal
+            title={
+              selectedStudents.length === 1
+                ? "Update Student Situation"
+                : `Update ${selectedStudents.length} Students' Situations`
+            }
+            visible={isSituationModalVisible}
+            onOk={handleUpdateSituation}
+            onCancel={() => {
+              setIsSituationModalVisible(false);
+              setSelectedStudents([]);
+              setSelectedRowKeys([]);
+            }}
+            okText="Update"
+            cancelText="Cancel"
+          >
+            <Form form={form} layout="vertical">
+              <Form.Item
+                name="anneeAcademique"
+                label="Academic Year"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input the academic year (e.g., 2024-2025)",
+                  },
+                  {
+                    pattern: /^\d{4}-\d{4}$/,
+                    message: "Please use format YYYY-YYYY (e.g., 2024-2025)",
+                  },
+                ]}
+              >
+                <Input placeholder="e.g., 2024-2025" />
+              </Form.Item>
+              <Form.Item
+                name="niveau"
+                label="Level"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input the level",
+                  },
+                ]}
+              >
+                <Input placeholder="e.g., 1, 2, 3..." />
+              </Form.Item>
+              <Form.Item
+                name="nouvelleSituation"
+                label="New Situation"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please select a situation",
+                  },
+                ]}
+              >
+                <Select placeholder="Select situation">
+                  <Option value="passe">Passe</Option>
+                  <Option value="redouble">Redouble</Option>
+                  <Option value="diplome">Diplomé</Option>
+                </Select>
+              </Form.Item>
+            </Form>
+          </Modal>
+
           <Table
+            rowSelection={userRole === "admin" ? rowSelection : undefined}
             columns={columns}
             dataSource={filteredData}
             rowKey="_id"

@@ -1,14 +1,19 @@
-import ButtonModel from "../../../components/button/Button";
-import Navbar from "../../../components/navbar/Navbar";
-import SidebarLayout from "../../../components/sidebar/Sidebar";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
   MailFilled,
+  PlayCircleOutlined,
 } from "@ant-design/icons";
+import { message, Select, Space, Tag } from "antd";
+
+import ButtonModel from "../../../components/button/Button";
+import Navbar from "../../../components/navbar/Navbar";
+import SidebarLayout from "../../../components/sidebar/Sidebar";
 import TableData from "../../../components/table/TableData";
-import "./ListeAffectedPfa.css";
+import ManuelAssignment from "../manualAssignment/ManuelAssignment";
+
 import {
   automatedAssignment,
   fetchPublishedPfas,
@@ -16,30 +21,64 @@ import {
   publishAffectedPfas,
   sendAffectedEmail,
 } from "../../../services/pfaServices";
-import { message, Space, Tag } from "antd";
-import ManuelAssignment from "../manualAssignment/ManuelAssignment";
+import { getLastAcademicYear } from "../../../services/appServices";
+
+import "./ListeAffectedPfa.css";
 
 function ListeAffectedPfa() {
+  const navigate = useNavigate();
+
   const [collapsed, setCollapsed] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [limit, setLimit] = useState(4); //
-  const [currentPage, setCurrentPage] = useState(1);
   const [pfas, setPfas] = useState([]);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [selectedYearFilter, setSelectedYearFilter] = useState(null);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPfaId, setSelectedPfaId] = useState(null);
 
-  useEffect(() => {
-    const loadPfas = async () => {
-      const data = await fetchPublishedPfas();
-      console.log("pfas récupérée", data);
+  const [limit, setLimit] = useState(4);
+  const [currentPage, setCurrentPage] = useState(1);
 
-      setPfas(data);
-      setLoading(false);
+  // Charger les PFAs avec filtrage dynamique
+  useEffect(() => {
+    const loadAndFilterPfas = async () => {
+      setLoading(true);
+      try {
+        const academicYearResponse = await getLastAcademicYear();
+        const academicYear = academicYearResponse.data;
+        setCurrentAcademicYear(academicYear);
+
+        const [, defaultYear] = academicYear.year.split("-");
+        const defaultYearNum = parseInt(defaultYear, 10);
+
+        const allPfas = await fetchPublishedPfas();
+        const years = [...new Set(allPfas.map((pfa) => pfa.annee))].sort(
+          (a, b) => b - a
+        );
+        setAvailableYears(years);
+
+        const yearToUse = selectedYearFilter || defaultYearNum;
+        const filtered = allPfas.filter((pfa) => pfa.annee === yearToUse);
+        setPfas(filtered);
+
+        if (!selectedYearFilter) {
+          setSelectedYearFilter(defaultYearNum);
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors du chargement ou filtrage des PFAs :",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadPfas();
-  }, []);
+    loadAndFilterPfas();
+  }, [selectedYearFilter]);
 
+  // Pagination
   const paginatedData = pfas.slice(
     (currentPage - 1) * limit,
     currentPage * limit
@@ -51,27 +90,21 @@ function ListeAffectedPfa() {
   };
 
   const handlePaginationChange = (page, pageSize) => {
-    setCurrentPage(page); // Mettre à jour la page courante
-    setLimit(pageSize); // Mettre à jour la taille de la page
+    setCurrentPage(page);
+    setLimit(pageSize);
   };
 
+  // Actions
   const handleAffectedPfa = async () => {
     try {
       setLoading(true);
       const response = await automatedAssignment();
-
-      if (response.success) {
-        message.success(response.message);
-      } else {
-        message.warning(response.message || "Une erreur est survenue.");
-      }
-
-      const updatedPfas = await fetchPublishedPfas();
-      setPfas(updatedPfas);
+      response.success
+        ? message.success(response.message)
+        : message.warning(response.message);
+      refreshMyData();
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message || "Erreur inattendue.";
-      message.error(errorMessage);
+      message.error(error?.response?.data?.message || "Erreur inattendue.");
     } finally {
       setLoading(false);
     }
@@ -81,18 +114,14 @@ function ListeAffectedPfa() {
     try {
       setLoading(true);
       const response = await publishAffectedPfas();
-
-      if (response) {
-        message.success(response.message);
-      } else {
-        message.warning(response.message);
-      }
-
-      const updatedPfas = await fetchPublishedPfas();
-      setPfas(updatedPfas);
+      response
+        ? message.success(response.message)
+        : message.warning("Aucun changement.");
+      refreshMyData();
     } catch (error) {
-      const errorMessage = error?.response?.data?.message;
-      message.error(errorMessage);
+      message.error(
+        error?.response?.data?.message || "Erreur lors de la publication."
+      );
     } finally {
       setLoading(false);
     }
@@ -102,18 +131,14 @@ function ListeAffectedPfa() {
     try {
       setLoading(true);
       const response = await maskedffectedPfas();
-
-      if (response) {
-        message.success(response.message);
-      } else {
-        message.warning(response.message);
-      }
-
-      const updatedPfas = await fetchPublishedPfas();
-      setPfas(updatedPfas);
+      response
+        ? message.success(response.message)
+        : message.warning("Aucun changement.");
+      refreshMyData();
     } catch (error) {
-      const errorMessage = error?.response?.data?.message;
-      message.error(errorMessage);
+      message.error(
+        error?.response?.data?.message || "Erreur lors du masquage."
+      );
     } finally {
       setLoading(false);
     }
@@ -123,40 +148,40 @@ function ListeAffectedPfa() {
     try {
       setLoading(true);
       const result = await sendAffectedEmail();
-      console.log("result", result);
-      message.success(result); // Le serveur retourne déjà un `message` explicite
-      const updatedPfas = await fetchPublishedPfas();
-      setPfas(updatedPfas);
+      message.success(result);
+      refreshMyData();
     } catch (error) {
-      const errorMessage =
+      message.error(
         error?.response?.data?.message ||
-        error.message ||
-        "Une erreur est survenue";
-      message.error(errorMessage);
+          error.message ||
+          "Une erreur est survenue"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const refreshMyData = async () => {
+    const data = await fetchPublishedPfas();
+    const filtered = data.filter((pfa) => pfa.annee === selectedYearFilter);
+    setPfas(filtered);
+  };
+
+  const handleNavigate = () => {
+    navigate("/home/listeSoutenancesPfa");
+  };
+
   const onAffectPfa = (info) => {
     setIsModalOpen(true);
-    console.log("info passé à onUpdatePfa", info);
-
-    const pfasdata = pfas.find((pfa) => pfa._id === info._id);
-    console.log("pfasdata", pfasdata);
-
-    if (pfasdata) {
-      setSelectedPfaId(pfasdata._id); // <<< ICI on enregistre l'ID !
+    const pfa = pfas.find((p) => p._id === info._id);
+    if (pfa) {
+      setSelectedPfaId(pfa._id);
     } else {
-      console.error("pfa non trouvée");
+      console.error("PFA introuvable");
     }
   };
 
-  const refreshMyData = async () => {
-    const data = await fetchPublishedPfas();
-    setPfas(data); // Mettre à jour l'état avec les données récupérées
-  };
-
+  // Colonnes du tableau
   const columns = [
     { title: "Code PFA", dataIndex: "code_pfa", key: "code" },
     { title: "Titre du sujet", dataIndex: "titreSujet", key: "titreSujet" },
@@ -170,32 +195,26 @@ function ListeAffectedPfa() {
       title: "Enseignant",
       dataIndex: "enseignant",
       key: "enseignant",
-      render: (enseignant) => `${enseignant.nom} ${enseignant.prenom}`,
+      render: (ens) => `${ens.nom} ${ens.prenom}`,
     },
     {
       title: "Étudiants",
       dataIndex: "etudiants",
       key: "etudiants",
-      render: (etudiants) => (
-        <>
-          {etudiants && etudiants.length > 0
-            ? etudiants.map((etudiant, index) => (
-                <div key={index}>
-                  {etudiant.nom} {etudiant.prenom}
-                </div>
-              ))
-            : null}
-        </>
-      ),
+      render: (etudiants) =>
+        etudiants?.map((e, i) => (
+          <div key={i}>
+            {e.nom} {e.prenom}
+          </div>
+        )),
     },
     {
       title: "État Affectation",
       dataIndex: "etatAffectation",
       key: "etatAffectation",
       render: (etat) => {
-        let color = "red";
-        let text = "Non affecté";
-
+        let color = "red",
+          text = "Non affecté";
         if (etat === "affected") {
           color = "green";
           text = "Affecté";
@@ -206,7 +225,6 @@ function ListeAffectedPfa() {
           color = "orange";
           text = "Masqué";
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -215,9 +233,7 @@ function ListeAffectedPfa() {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <a onClick={() => onAffectPfa(record)}>
-            Affecter manuellement ce sujet
-          </a>
+          <a onClick={() => onAffectPfa(record)}>Affecter manuellement</a>
         </Space>
       ),
     },
@@ -228,49 +244,67 @@ function ListeAffectedPfa() {
       <Navbar />
       <SidebarLayout collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="table-container">
-        <h3>Liste des sujets PFA affecté</h3>
+        <h3>Liste des sujets PFA affectés</h3>
+
         <div className="table-header">
-          <>
-            <ButtonModel
-              text="Lancer l'affectation automatique"
-              onClick={handleAffectedPfa}
-              icon={<EyeOutlined />}
-            />
-            <ButtonModel
-              text="Publier les sujets"
-              onClick={handlePublishedPfa}
-              icon={<EyeOutlined />}
-            />
-            <ButtonModel
-              text="Masquer les sujets"
-              onClick={handleMasquedPfa}
-              icon={<EyeInvisibleOutlined />}
-            />
-            <ButtonModel
-              text="Envoyer la liste actuelle"
-              onClick={sendAffectedePfas}
-              icon={<MailFilled />}
-            />
-          </>
+          <ButtonModel
+            text="Lancer l'affectation automatique"
+            onClick={handleAffectedPfa}
+            icon={<PlayCircleOutlined />}
+          />
+          <ButtonModel
+            text="Publier les sujets"
+            onClick={handlePublishedPfa}
+            icon={<EyeOutlined />}
+          />
+          <ButtonModel
+            text="Masquer les sujets"
+            onClick={handleMasquedPfa}
+            icon={<EyeInvisibleOutlined />}
+          />
+          <ButtonModel
+            text="Envoyer la liste actuelle"
+            onClick={sendAffectedePfas}
+            icon={<MailFilled />}
+          />
+          <ButtonModel
+            text="Consulter la liste des soutenances"
+            onClick={handleNavigate}
+            icon={<EyeOutlined />}
+          />
         </div>
+
+        <Select
+          placeholder="Filtrer par année"
+          style={{ width: 200, marginLeft: 10 }}
+          value={selectedYearFilter}
+          onChange={(value) => setSelectedYearFilter(value || null)}
+          allowClear
+        >
+          {availableYears.map((year) => (
+            <Select.Option key={year} value={year}>
+              {year}
+            </Select.Option>
+          ))}
+        </Select>
+
         <TableData
           columns={columns}
           data={paginatedData}
           loading={loading}
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
-
-          // Passer la fonction pour gérer la pagination
         />
       </div>
+
       {isModalOpen && (
         <ManuelAssignment
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
-          title={"Affecter manuellement"}
+          title="Affecter manuellement"
           refreshMyData={refreshMyData}
           pfas={pfas}
-          selectedPfaId={selectedPfaId} // <<< Important !
+          selectedPfaId={selectedPfaId}
         />
       )}
     </div>

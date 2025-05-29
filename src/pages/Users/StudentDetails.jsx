@@ -3,16 +3,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     Button, Card, Spin, Alert, Row, Col, Descriptions, Tag, Space,
     Typography, Form, Input, Select, DatePicker, Modal, message,
-    ColorPicker
+    Table, Divider
 } from "antd";
 import {
     UserOutlined, MailOutlined, PhoneOutlined, HomeOutlined,
-    UnorderedListOutlined, FileTextOutlined, LockOutlined
+    UnorderedListOutlined, FileTextOutlined, LockOutlined,
+    BookOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-
 import Navbar from "../../components/navbar/Navbar";
 import SidebarLayout from "../../components/sidebar/Sidebar";
+import StudentCV from "./StudentCV";
+
 import { fetchStudentById, updateStudent, updateStudentPassword } from "../../services/userService";
 
 const { Title, Text } = Typography;
@@ -30,7 +32,7 @@ function StudentDetails() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const navigate = useNavigate();
-
+    const [showCV, setShowCV] = useState(false);
     useEffect(() => {
         const loadStudentDetails = async () => {
             try {
@@ -82,6 +84,63 @@ function StudentDetails() {
     };
 
     const renderField = (field) => (!field && field !== 0 ? <Text type="secondary">Unavailable</Text> : <Text>{field}</Text>);
+
+    const renderAcademicStatuses = () => {
+        if (!student?.academic_statuses || student.academic_statuses.length === 0) {
+            return (
+             
+                <Card title="Academic Statuses" bordered={false} style={cardStyle} >
+                    <Text type="secondary">No academic statuses recorded</Text>
+                </Card>
+               
+            );
+        }
+
+        const columns = [
+            {
+                title: 'Academic Year',
+                dataIndex: 'academic_year',
+                key: 'academic_year',
+            },
+            {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+                render: (status) => {
+                    let color = 'blue';
+                    if (status === 'diplome') color = 'green';
+                    if (status === 'redouble') color = 'orange';
+                    return <Tag color={color}>{status.toUpperCase()}</Tag>;
+                },
+            },
+            {
+                title: 'Details',
+                dataIndex: 'details',
+                key: 'details',
+                render: (details) => details || '-',
+            },
+        ];
+
+        return (
+            <Card 
+                title={
+                    <span>
+                        <BookOutlined /> Academic Statuses
+                    </span>
+                } 
+                bordered={false} 
+                style={cardStyle}
+            >
+                <Table 
+                    columns={columns} 
+                    dataSource={student.academic_statuses} 
+                    rowKey="_id"
+                    pagination={false}
+                    size="small"
+                />
+            </Card>
+        );
+    };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#f0f2f5" }}>
@@ -216,16 +275,31 @@ function StudentDetails() {
                                                     <Descriptions.Item label="Entry Year">{renderField(student.annee_entree_isamm)}</Descriptions.Item>
                                                 </Descriptions>
                                             )}
+                                            <br />
+                                            {renderAcademicStatuses()}
                                         </Card>
 
-                                        <Card title="Additional Information" bordered={false} style={{ ...cardStyle, marginTop: "20px" }}>
-                                            <Space direction="vertical" style={{ width: "100%" }}>
-                                                <Text><UnorderedListOutlined style={{ color: "#1890ff" }} /> {renderField(student.situation)}</Text>
-                                                <Text><FileTextOutlined style={{ color: "#1890ff" }} /> {renderField(student.isFirstSendPfa ? "PFA Sent" : "PFA Not Sent")}</Text>
-                                            </Space>
-                                        </Card>
+                                        {/* Academic Statuses Card */}
+                                      
                                     </Col>
                                 </Row>
+                                
+                                <Button onClick={() => setShowCV(!showCV)}>
+        {showCV ? 'Hide CV' : 'Show CV'}
+    </Button>
+                            {showCV && (
+    <Row gutter={[30, 30]} style={{ marginTop: 20 }}>
+        <Col span={24}>
+            <StudentCV
+                student={student}
+                editMode={editMode}
+                form={form}
+                studentId={id}
+                style={{ display: 'flex', flexDirection: 'row' }}
+            />
+        </Col>
+    </Row>
+)}
                             </Card>
 
                             <Space style={{ marginTop: "40px" }}>
@@ -238,7 +312,7 @@ function StudentDetails() {
                                         Save Changes
                                     </Button>
                                 )}
-                                <Button type="danger"  icon={<LockOutlined />} onClick={() => setIsPasswordModalVisible(true)}>
+                                <Button type="danger" icon={<LockOutlined />} onClick={() => setIsPasswordModalVisible(true)}>
                                     Change Password
                                 </Button>
                             </Space>
@@ -290,6 +364,7 @@ const cardStyle = {
     borderRadius: "10px",
     padding: "20px",
     boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.1)",
+    
 };
 
 export default StudentDetails;

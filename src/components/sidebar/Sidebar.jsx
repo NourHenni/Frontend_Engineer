@@ -9,7 +9,7 @@ import pfa from "../../assets/icons/project-management.png";
 import matiere from "../../assets/icons/education.png";
 import ete from "../../assets/icons/strategic-planning_.png";
 import "./Sidebar.css";
-
+import profileIcon from "../../assets/icons/profile.png";
 function SidebarLayout({ collapsed, setCollapsed }) {
   const [userRole, setUserRole] = useState(null);
   const location = useLocation();
@@ -78,6 +78,13 @@ function SidebarLayout({ collapsed, setCollapsed }) {
       requiredRoles: ["admin", "enseignant", "etudiant"],
     },
   ];
+  const ProfileItem = {
+    label: "Profil",
+    key: "/home/Profile",
+    icon: <img src={profileIcon} style={{ width: 25, height: 25 }} />,
+    route: "/home/Profile",
+    requiredRoles: ["etudiant"],
+  };
 
   return (
     <Sider
@@ -93,19 +100,32 @@ function SidebarLayout({ collapsed, setCollapsed }) {
         onClick={() => setCollapsed(!collapsed)}
         className={`sider--arrow ${collapsed ? "isClosed" : "isOpen"}`}
       />
-
-      {/* Sidebar Menu */}
-      <Menu mode="inline" className="menu" selectedKeys={[location.pathname]}>
-        {MenuItems.filter((item) => {
-          return !item.requiredRoles || item.requiredRoles.includes(userRole);
-        }).map((item) => (
-          <Menu.Item key={item.key} icon={item.icon}>
-            <Link to={item.route}>{item.label}</Link>
-          </Menu.Item>
-        ))}
-      </Menu>
+  
+      {/* Sidebar Container for main and bottom sections */}
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        {/* Top Menu Items */}
+        <Menu mode="inline" className="menu" selectedKeys={[location.pathname]}>
+          {MenuItems.filter((item) => {
+            return !item.requiredRoles || item.requiredRoles.includes(userRole);
+          }).map((item) => (
+            <Menu.Item key={item.key} icon={item.icon}>
+              <Link to={item.route}>{item.label}</Link>
+            </Menu.Item>
+          ))}
+        </Menu>
+  
+        {/* Bottom Profile Menu */}
+        <Menu mode="inline" selectedKeys={[location.pathname]} style={{ marginTop: "auto" }}>
+          {(!ProfileItem.requiredRoles || ProfileItem.requiredRoles.includes(userRole)) && (
+            <Menu.Item key={ProfileItem.key} icon={ProfileItem.icon}>
+              <Link to={ProfileItem.route}>{ProfileItem.label}</Link>
+            </Menu.Item>
+          )}
+        </Menu>
+      </div>
     </Sider>
   );
+  
 }
 
 export default SidebarLayout;

@@ -1,26 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Form, Typography, Input, Select, message, Spin } from "antd";
+import { Form, Typography, message, Spin } from "antd";
 import FormModal from "../../../components/modals/FormModal";
 import { submitPfaChoices } from "../../../services/pfaServices";
 import axios from "axios";
+import { getLastAcademicYear } from "../../../services/appServices";
 
 const { Title } = Typography;
 
 const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
   const [form] = Form.useForm();
-  const [pfaOptions, setPfaOptions] = useState([]); // Stocker les options de PFA
-  const [loading, setLoading] = useState(true); // Indicateur de chargement
-  const [error, setError] = useState(null); // Pour afficher une erreur
-  const [students, setStudents] = useState([]); // Liste des étudiants
+  const [pfaOptions, setPfaOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [yearPrefix, setYearPrefix] = useState("");
+  const [students, setStudents] = useState([]);
 
-  const currentYear = new Date().getFullYear();
-  const pfaPrefix = `PFA${currentYear}-`;
-
-  // Fonction pour récupérer les codes PFA publiés
   useEffect(() => {
-    const fetchPfaOptions = async () => {
+    const fetchAllData = async () => {
       try {
-        const response = await axios.get(
+        // 1. Get academic year and extract second part (e.g., "2026" from "2025-2026")
+        const academicYearData = await getLastAcademicYear();
+        console.log("Année académique:", academicYearData);
+        if (academicYearData?.data.year?.includes("-")) {
+          const [_, endYear] = academicYearData.data.year.split("-");
+          setYearPrefix(endYear);
+        }
+
+        // 2. Get published PFA codes
+        const pfaRes = await axios.get(
           "http://localhost:5000/pfa/publishedCode",
           {
             headers: {
@@ -28,18 +34,17 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
             },
           }
         );
-        console.log(response.data.codes);
-        setPfaOptions(response.data.codes); // Récupérer les codes PFA
-        setLoading(false);
-      } catch (error) {
-        setError("Erreur lors de la récupération des sujets PFA.");
-        setLoading(false);
-      }
-    };
 
-    const fetchStudents = async () => {
-      try {
-        const response = await axios.get(
+        if (pfaRes.data.codes.length === 0) {
+          message.info(
+            pfaRes.data.message || "Pas encore de sujets PFA publiés"
+          );
+        }
+
+        setPfaOptions(pfaRes.data.codes);
+
+        // 3. Get students
+        const studentsRes = await axios.get(
           "http://localhost:5000/pfa/studentsPfas",
           {
             headers: {
@@ -47,19 +52,19 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
             },
           }
         );
-        console.log("response", response);
-        const students = response.data.users; // Liste des étudiants
-        setStudents(students);
+
+        setStudents(studentsRes.data.users || []);
       } catch (error) {
-        console.error("Erreur", error);
+        console.error("Erreur lors du chargement:", error);
+        message.error("Erreur lors du chargement des données.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPfaOptions();
-    fetchStudents();
+    fetchAllData();
   }, []);
 
-  // Validation des doublons
   const validateUniquePriority = (_, value, allValues) => {
     const priorities = [
       allValues.priority1,
@@ -73,13 +78,12 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
     return Promise.resolve();
   };
 
-  // Validation format + existence
   const validatePfaCode = (_, value) => {
     if (!/^\d{2}$/.test(value)) {
       return Promise.reject("Format invalide (2 chiffres requis)");
     }
 
-    const fullCode = `${pfaPrefix}${value}`;
+    const fullCode = `PFA${yearPrefix}-${value}`;
     if (!pfaOptions.includes(fullCode)) {
       return Promise.reject("Code PFA inexistant");
     }
@@ -92,81 +96,66 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
       label: "Priorité 1",
       name: "priority1",
       type: "inputChoice",
-      addonBefore: pfaPrefix,
+      addonBefore: `PFA${yearPrefix}-`,
       rules: [
         { required: true, message: "Champ requis !" },
         { validator: validatePfaCode },
         { validator: validateUniquePriority },
       ],
-      inputProps: {
-        maxLength: 2,
-        placeholder: "01",
-      },
+      inputProps: { maxLength: 2, placeholder: "01" },
     },
     {
       label: "Priorité 2",
       name: "priority2",
       type: "inputChoice",
-      addonBefore: pfaPrefix,
+      addonBefore: `PFA${yearPrefix}-`,
       rules: [
         { required: true, message: "Champ requis !" },
         { validator: validatePfaCode },
         { validator: validateUniquePriority },
       ],
-      inputProps: {
-        maxLength: 2,
-        placeholder: "02",
-      },
+      inputProps: { maxLength: 2, placeholder: "02" },
     },
     {
       label: "Priorité 3",
       name: "priority3",
       type: "inputChoice",
-      addonBefore: pfaPrefix,
+      addonBefore: `PFA${yearPrefix}-`,
       rules: [
         { required: true, message: "Champ requis !" },
         { validator: validatePfaCode },
         { validator: validateUniquePriority },
       ],
-      inputProps: {
-        maxLength: 2,
-        placeholder: "03",
-      },
+      inputProps: { maxLength: 2, placeholder: "03" },
     },
     {
       label: "Code du sujet accepté",
       name: "acceptedpfa",
       type: "inputChoice",
-      addonBefore: pfaPrefix,
+      addonBefore: `PFA${yearPrefix}-`,
       rules: [
-        { required: false, message: "Champ requis !" },
+        { required: false },
         ({ getFieldValue }) => ({
           validator(_, value) {
             if (value && !/^\d{2}$/.test(value)) {
               return Promise.reject("Format invalide (2 chiffres requis)");
             }
-
-            const fullCode = `${pfaPrefix}${value}`;
+            const fullCode = `PFA${yearPrefix}-${value}`;
             if (value && !pfaOptions.includes(fullCode)) {
               return Promise.reject("Code PFA inexistant");
             }
-
             return Promise.resolve();
           },
         }),
         { validator: validateUniquePriority },
       ],
-      inputProps: {
-        maxLength: 2,
-        placeholder: "03",
-      },
+      inputProps: { maxLength: 2, placeholder: "03" },
     },
-
     {
       label: "Votre Binôme",
       name: "binomeId",
       type: "selectStudents",
-      rules: [{ required: false, message: "Champ requis !" }],
+      rules: [{ required: false }],
       selectProps: {
         options: students.map((student) => ({
           label: `${student.nom} ${student.prenom}`,
@@ -182,12 +171,10 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
     const payload = {
       binomeId: values.binomeId || null,
       acceptedPfa: values.acceptedpfa
-        ? `PFA${new Date().getFullYear()}-${values.acceptedpfa}`
+        ? `PFA${yearPrefix}-${values.acceptedpfa}`
         : null,
       choices: [1, 2, 3].map((priority) => ({
-        codePfa: `PFA${new Date().getFullYear()}-${
-          values[`priority${priority}`]
-        }`,
+        codePfa: `PFA${yearPrefix}-${values[`priority${priority}`]}`,
         priority,
       })),
     };
@@ -202,11 +189,12 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
     }
   };
 
-  // Affichage du composant en fonction du chargement ou des erreurs
   if (loading) {
-    return (
-      <Spin spinning={loading} size="small" tip="Chargement en cours..." />
-    );
+    return <Spin spinning size="large" tip="Chargement en cours..." />;
+  }
+
+  if (!yearPrefix) {
+    return <div>Année universitaire non disponible.</div>;
   }
 
   return (
