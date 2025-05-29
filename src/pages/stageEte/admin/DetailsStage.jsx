@@ -35,7 +35,7 @@ import "./StageDetails.css";
 
 const { Title, Text, Paragraph } = Typography;
 
-function StageDetails() {
+const StageDetails = () => {
   const { type, id } = useParams();
   const [stageDetails, setStageDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -118,14 +118,26 @@ function StageDetails() {
         <div className="status-section">
           <div className="status-item">
             <Text strong>Sujet :</Text>
-            <Tag color="error" className="status-tag">
-              Non valide
+            <Tag
+              color={
+                stageDetails.stage.statutSujet === "Valide"
+                  ? "success"
+                  : "error"
+              }
+            >
+              {stageDetails.stage.statutSujet}
             </Tag>
           </div>
           <div className="status-item">
             <Text strong>Statut Dépôt :</Text>
-            <Tag color="warning" className="status-tag">
-              Déposé avec retard
+            <Tag
+              color={
+                stageDetails.stage.statutDepot === "Depose"
+                  ? "success"
+                  : "error"
+              }
+            >
+              {stageDetails.stage.statutDepot}
             </Tag>
           </div>
         </div>
@@ -316,6 +328,6 @@ function StageDetails() {
       </Row>
     </div>
   );
-}
+};
 
 export default StageDetails;

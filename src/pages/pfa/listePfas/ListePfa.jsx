@@ -235,7 +235,7 @@ function ListePfa() {
       const targetYearNum = parseInt(targetYear, 10);
       filteredData = data.filter((pfa) => pfa.annee === targetYearNum);
     }
-    setDataPfas(filteredData); // Mettre à jour l'état avec les données récupérées
+    setDataPfas(filteredData);
   };
 
   const handleShowModal = (record) => {
@@ -480,7 +480,6 @@ function ListePfa() {
       okText: "Oui",
       onOk: () => {
         return new Promise((resolve, reject) => {
-          // Assurez-vous que le token est bien récupéré du localStorage ou autre source
           const token = localStorage.getItem("token");
 
           if (!token) {
@@ -491,7 +490,7 @@ function ListePfa() {
           axios
             .delete(`http://localhost:5000/pfa/${record._id}`, {
               headers: {
-                Authorization: `Bearer ${token}`, // Inclure le token ici
+                Authorization: `Bearer ${token}`,
               },
             })
             .then(({ data }) => {
@@ -502,7 +501,11 @@ function ListePfa() {
               resolve(data);
             })
             .catch((err) => {
-              message.error("Erreur lors de la suppression du sujet");
+              // Récupérer le message du serveur s’il existe
+              const errorMsg =
+                err.response?.data?.message ||
+                "Une erreur s'est produite lors de la suppression.";
+              message.error(errorMsg); // Affichage dans l’UI
               reject(err);
             });
         });

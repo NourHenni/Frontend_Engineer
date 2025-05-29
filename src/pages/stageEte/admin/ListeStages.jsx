@@ -1,4 +1,4 @@
- import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -6,7 +6,6 @@ import {
   Select,
   Tag,
   message,
-  DatePicker,
   Spin,
   Button,
   Modal,
@@ -31,8 +30,6 @@ import {
   SearchOutlined,
   UserOutlined,
   MailOutlined,
-  
-  
   FileOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -43,7 +40,6 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import "../ListeStages.css";
-import dayjs from "dayjs";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -82,10 +78,11 @@ const styles = {
   },
 };
 
-import PeriodManagement from "./PeriodManagement";
-
 function ListeStages() {
-  const [niveau, setNiveau] = useState("premiereannee");
+  // --- États existants ---
+  const [niveau, setNiveau] = useState(
+    () => localStorage.getItem("stageNiveau") || "premiereannee"
+  );
   const [loading, setLoading] = useState(false);
   const [stages, setStages] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -96,87 +93,18 @@ function ListeStages() {
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isPublished, setIsPublished] = useState(false);
- 
-  //const [anneeStage, setanneeStage] = useState("2024-2025");
+  const [availableYears, setAvailableYears] = useState([]);
+  const [anneeStage, setAnneeStage] = useState(
+    () => localStorage.getItem("stageAnnee") || null
+  );
+  const [editLoading, setEditLoading] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
-  const [editLoading, setEditLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    DateDebutDepot: "",
-    DateFinDepot: "",
-  });
+  const [sendingEmail, setSendingEmail] = useState(false); // Assurez-vous que cet état est utilisé
+  const [publishing, setPublishing] = useState(false); // Assurez-vous que cet état est utilisé
 
-  
-  const [formErrors, setFormErrors] = useState({});
   const navigate = useNavigate();
-  const [anneeStage, setAnneeStage] = useState(dayjs().year().toString());
 
-  const showPeriodModal = () => setModalVisible(true);
-  const [sendingEmail, setSendingEmail] = useState(false);
-const [publishing, setPublishing] = useState(false);
-
-
-  // Un seul useEffect pour le chargement initial
-  useEffect(() => {
-    // Récupérer les préférences sauvegardées si elles existent
-    const savedNiveau = localStorage.getItem('stageNiveau');
-    const savedAnnee = localStorage.getItem('stageAnnee');
-    
-    if (savedNiveau) setNiveau(savedNiveau);
-    if (savedAnnee) setAnneeStage(savedAnnee);
-    
-    // Charger les données
-    fetchStages(savedNiveau || niveau, savedAnnee || dayjs().year().toString());
-  }, []);
-
-  // useEffect pour les changements de critères
-  useEffect(() => {
-    if (niveau && anneeStage) {
-      // Sauvegarder les préférences
-      localStorage.setItem('stageNiveau', niveau);
-      localStorage.setItem('stageAnnee', anneeStage);
-      
-      // Charger les données
-      fetchStages(niveau, anneeStage);
-    }
-  }, [niveau, anneeStage]);
-
-  useEffect(() => {
-    if (stages.length > 0) {
-      const publishedStatus = stages.some((stage) => stage.publie);
-      setIsPublished(publishedStatus);
-    }
-  }, [stages]);
-
- const fetchStages = async (selectedType, selectedYear) => {
-    if (!selectedType || !selectedYear) return;
-    
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await getInternshipsByTypeAndYear(
-        selectedType,
-        selectedYear,
-        token
-      );
-      
-      const stagesData = response.data || [];
-      const stagesAvecPublication = stagesData.map((stage) => ({
-        ...stage,
-        publie: stage.stage.publie,
-      }));
-      
-      setStages(stagesAvecPublication);
-      setIsPublished(stagesAvecPublication.some((stage) => stage.publie));
-    } catch (err) {
-      console.error("Erreur fetchStages:", err);
-      message.error(err.message || "Erreur lors du chargement.");
-      setStages([]);
-      setIsPublished(false);
-    } finally {
-      setLoading(false);
-    }
-  };
   const getTeachers = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -203,10 +131,11 @@ const [publishing, setPublishing] = useState(false);
       message.error("Erreur lors de l'affectation.");
     }
   };
-
   const handleUpdateAffectation = async () => {
     if (!selectedStage || !selectedTeacherId) {
-      return message.warning("Veuillez sélectionner un stage et un enseignant.");
+      return message.warning(
+        "Veuillez sélectionner un stage et un enseignant."
+      );
     }
 
     setEditLoading(true);
@@ -229,7 +158,6 @@ const [publishing, setPublishing] = useState(false);
       setEditLoading(false);
     }
   };
-
   const sendPlanningEmail = async () => {
     if (!niveau) return;
 
@@ -254,34 +182,150 @@ const [publishing, setPublishing] = useState(false);
       setLoading(false);
     }
   };
-
   const togglePublicationStatus = async () => {
     try {
       setLoading(true);
       const newStatus = !isPublished;
-      
+
       await togglePlanningVisibility(niveau, newStatus);
-      
+
       setStages((prevStages) =>
         prevStages.map((stage) => ({
           ...stage,
           publie: newStatus,
         }))
       );
-      
+
       setIsPublished(newStatus);
-      message.success(`Planning ${newStatus ? "publié" : "masqué"} avec succès !`);
-      
+      message.success(
+        `Planning ${newStatus ? "publié" : "masqué"} avec succès !`
+      );
+
       await fetchStages(niveau, anneeStage);
     } catch (err) {
       message.error(
-        err.response?.data?.message || "Erreur lors de la modification du statut"
+        err.response?.data?.message ||
+          "Erreur lors de la modification du statut"
       );
       await fetchStages(niveau, anneeStage);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchStages = useCallback(async (selectedType, selectedYear) => {
+    if (!selectedType || !selectedYear) {
+      console.log("fetchStages called with invalid params, skipping.");
+      setStages([]);
+      setIsPublished(false);
+      return;
+    }
+
+    console.log(
+      `Fetching stages for type: ${selectedType}, year: ${selectedYear}`
+    );
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await getInternshipsByTypeAndYear(
+        selectedType,
+        selectedYear,
+        token
+      );
+
+      const stagesData = response.data || [];
+
+      const stagesAvecPublication = stagesData.map((stage) => ({
+        ...stage,
+
+        publie: stage.publie !== undefined ? stage.publie : stage.stage?.publie,
+      }));
+
+      setStages(stagesAvecPublication);
+      setIsPublished(stagesAvecPublication.some((stage) => stage.publie));
+    } catch (err) {
+      console.error("Erreur fetchStages:", err);
+      if (err.response && err.response.status === 404) {
+        setStages([]);
+        setIsPublished(false);
+        console.log("Aucun stage trouvé (réponse 404 du serveur).");
+      } else {
+        message.error(err.message || "Erreur lors du chargement des stages.");
+        setStages([]);
+        setIsPublished(false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // --- useEffect pour le chargement initial des années et de l'année sélectionnée ---
+  useEffect(() => {
+    const initializeData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:5000/internship/years",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        let years = [];
+        if (response.data && response.data.years) {
+          years = response.data.years.sort((a, b) => b - a);
+          setAvailableYears(years);
+        }
+
+        let currentAnnee = anneeStage;
+        if (!currentAnnee) {
+          const savedAnnee = localStorage.getItem("stageAnnee");
+          if (savedAnnee && years.includes(parseInt(savedAnnee))) {
+            currentAnnee = parseInt(savedAnnee);
+          } else if (years.length > 0) {
+            currentAnnee = years[0];
+            localStorage.setItem("stageAnnee", years[0]);
+          }
+        }
+
+        if (currentAnnee !== anneeStage) {
+          setAnneeStage(currentAnnee);
+        }
+      } catch (error) {
+        console.error("Erreur d'initialisation (années):", error);
+
+        setAnneeStage(null);
+        setAvailableYears([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initializeData();
+  }, []);
+
+  useEffect(() => {
+    if (niveau && anneeStage) {
+      localStorage.setItem("stageNiveau", niveau);
+      localStorage.setItem("stageAnnee", anneeStage);
+      fetchStages(niveau, anneeStage);
+    } else {
+      setStages([]);
+      setIsPublished(false);
+    }
+  }, [niveau, anneeStage, fetchStages]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && niveau && anneeStage) {
+        console.log("ListeStages view became visible, re-fetching stages...");
+        fetchStages(niveau, anneeStage);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [niveau, anneeStage, fetchStages]);
 
   const filteredTeachers = teacherList.filter((teacher) =>
     `${teacher.nom} ${teacher.prenom}`
@@ -297,7 +341,7 @@ const [publishing, setPublishing] = useState(false);
       render: (etudiant) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{ color: colors.text }}>
-            <UserOutlined /> {etudiant.nom} {etudiant.prenom}
+            <UserOutlined /> {etudiant?.nom} {etudiant?.prenom}
           </Text>
         </Space>
       ),
@@ -306,6 +350,7 @@ const [publishing, setPublishing] = useState(false);
     },
     {
       title: "Titre du Sujet",
+
       dataIndex: ["stage", "titreSujet"],
       key: "titreSujet",
       ellipsis: true,
@@ -380,6 +425,7 @@ const [publishing, setPublishing] = useState(false);
     },
     {
       title: "Publication",
+
       dataIndex: "publie",
       key: "publie",
       render: (publie) => (
@@ -405,22 +451,11 @@ const [publishing, setPublishing] = useState(false);
       }}
     >
       <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-          <Title
-            level={3}
-            style={{ marginBottom: 0, color: colors.text, fontWeight: 600 }}
-          >
-            Gestion des stages d'été
-          </Title>
-
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Card
             bordered={false}
-            style={{
-              boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
-              borderRadius: 8,
-              backgroundColor: colors.card,
-            }}
-            bodyStyle={{ padding: 16 }}
+            style={styles.card}
+            bodyStyle={{ padding: "16px 24px" }}
           >
             <Space size="middle" align="center" wrap>
               <Space>
@@ -442,18 +477,26 @@ const [publishing, setPublishing] = useState(false);
                 <Text strong style={{ color: colors.text }}>
                   Année :
                 </Text>
-                <DatePicker
-  picker="year"
-  value={anneeStage ? dayjs(anneeStage, 'YYYY') : null}
-  onChange={(date) => {
-    setAnneeStage(date ? date.year().toString() : dayjs().year().toString());
-  }}
-  placeholder="Sélectionner une année"
-  style={{ width: 160 }}
-/>
-
+                <Select
+                  placeholder="Sélectionner..."
+                  style={{ width: 140 }}
+                  value={anneeStage ? anneeStage.toString() : undefined}
+                  onChange={(value) => setAnneeStage(parseInt(value))}
+                  loading={loading && availableYears.length === 0}
+                  notFoundContent={
+                    loading ? <Spin size="small" /> : "Aucune année"
+                  }
+                  size="middle"
+                >
+                  {availableYears.map((year) => (
+                    <Option key={year} value={year.toString()}>
+                      {year}
+                    </Option>
+                  ))}
+                </Select>
               </Space>
 
+              {/* Boutons d'action */}
               <Tooltip title="Affecter des enseignants aux stages">
                 <Button
                   type="primary"
@@ -462,6 +505,8 @@ const [publishing, setPublishing] = useState(false);
                     setIsModalVisible(true);
                     getTeachers();
                   }}
+                  size="middle"
+                  disabled={stages.length === 0}
                 >
                   Affecter enseignants
                 </Button>
@@ -470,44 +515,56 @@ const [publishing, setPublishing] = useState(false);
               <Tooltip title="Modifier les affectations existantes">
                 <Button
                   icon={<EditOutlined />}
+                  type="primary"
                   onClick={() => {
                     setIsEditModalVisible(true);
                     getTeachers();
                   }}
+                  size="middle"
+                  disabled={stages.length === 0}
                 >
                   Modifier affectation
                 </Button>
               </Tooltip>
 
               <Tooltip title="Gérer les périodes de dépôt">
-  <Button
-    type="primary"
-    icon={<EditOutlined />}
-    onClick={() => navigate("/periods/StageEte")}
-  >
-    Gérer périodes
-  </Button>
-</Tooltip>
+                <Button
+                  icon={<EditOutlined />}
+                  type="primary"
+                  onClick={() => navigate("/periods/StageEte")}
+                  size="middle"
+                >
+                  Gérer périodes
+                </Button>
+              </Tooltip>
 
               <Tooltip title="Envoyer le planning par email">
                 <Button
-                  type="primary"
                   icon={<SendOutlined />}
+                  type="primary"
                   onClick={sendPlanningEmail}
-                  loading={loading}
+                  loading={sendingEmail}
+                  size="middle"
+                  disabled={stages.length === 0}
                 >
                   Envoyer planning
                 </Button>
               </Tooltip>
 
               <Tooltip
-                title={isPublished ? "Masquer le planning" : "Publier le planning"}
+                title={
+                  isPublished ? "Masquer le planning" : "Publier le planning"
+                }
               >
                 <Button
-                  type={isPublished ? "primary" : "danger"}
-                  icon={isPublished ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                  type="primary"
+                  icon={
+                    isPublished ? <EyeInvisibleOutlined /> : <EyeOutlined />
+                  }
                   onClick={togglePublicationStatus}
-                  loading={loading}
+                  loading={publishing}
+                  size="middle"
+                  disabled={stages.length === 0}
                 >
                   {isPublished ? "Masquer planning" : "Publier planning"}
                 </Button>
@@ -515,66 +572,135 @@ const [publishing, setPublishing] = useState(false);
             </Space>
           </Card>
 
+          {/* --- Card pour la Table --- */}
           <Card
-  bordered={false}
-  style={{
-    boxShadow: "0 2px 8px rgba(0,0,0,0.09)",
-    borderRadius: 8,
-    backgroundColor: colors.card,
-  }}
-  bodyStyle={{ padding: 0 }}
->
-  {loading ? (
-    <div style={{ textAlign: "center", padding: 40, minHeight: 300 }}>
-      <Spin size="large" />
-    </div>
-  ) : stages.length === 0 ? (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "60px 20px",
-        color: "#999",
-        minHeight: 300,
-      }}
-    >
-      <FileSearchOutlined style={{ fontSize: 50, color: "#ccc" }} />
-      <Text
-        type="secondary"
-        style={{ display: "block", marginTop: 20, fontSize: 18 }}
-      >
-        Aucun stage trouvé pour le niveau et l'année sélectionnés.
-      </Text>
-    </div>
-  ) : (
-    <Table
-      columns={columns}
-      dataSource={stages}
-      rowKey={(record) => record.stage._id}
-      onRow={(record) => ({
-        onClick: () => {
-          navigate(`/internship/${niveau}/${record.stage._id}`);
-        },
-        style: { cursor: "pointer" },
-      })}
-      scroll={{ x: "max-content" }}
-      size="middle"
-    />
-  )}
-</Card>
-
-          <Modal
-            title="Affectation des enseignants"
-            open={isModalVisible}
-            onOk={handleAffectation}
-            onCancel={() => {
-              setIsModalVisible(false);
-              setSelectedTeachers([]);
-              setSearchText("");
-            }}
-            okText="Affecter"
-            cancelText="Annuler"
-            width={600}
+            bordered={false}
+            style={styles.card}
+            bodyStyle={{ paddingTop: 0 }}
           >
+            <Table
+              columns={columns}
+              dataSource={stages}
+              loading={loading}
+              onRow={(record) => ({
+                onClick: () => {
+                  navigate(`/internship/${niveau}/${record.stage._id}`);
+                },
+                style: { cursor: "pointer" },
+              })}
+              rowKey={(record) => record._id || record.stage?._id}
+              scroll={{ x: 1300 }}
+              style={styles.table}
+              locale={{
+                emptyText: (
+                  <Empty description="Aucun stage trouvé pour le niveau et l'année sélectionnés." />
+                ),
+              }}
+              size="middle"
+            />
+          </Card>
+        </Space>
+      </div>
+
+      {/* Modal Affectation */}
+
+      <Modal
+        title="Affectation des enseignants"
+        open={isModalVisible}
+        onOk={handleAffectation}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setSelectedTeachers([]);
+          setSearchText("");
+        }}
+        okText="Affecter"
+        cancelText="Annuler"
+        width={600}
+      >
+        <Input
+          placeholder="Rechercher un enseignant..."
+          prefix={<SearchOutlined />}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{ marginBottom: 16 }}
+        />
+        <Checkbox.Group
+          style={{ width: "100%" }}
+          value={selectedTeachers}
+          onChange={setSelectedTeachers}
+        >
+          <Space direction="vertical" style={{ width: "100%" }}>
+            {filteredTeachers.map((teacher) => (
+              <Checkbox key={teacher._id} value={teacher._id}>
+                <Text strong>
+                  {teacher.nom} {teacher.prenom}
+                </Text>
+                <Text type="secondary">{teacher.email}</Text>
+              </Checkbox>
+            ))}
+          </Space>
+        </Checkbox.Group>
+      </Modal>
+
+      {/* Modal Modification Affectation */}
+      <Modal
+        title="Modification des affectations"
+        open={isEditModalVisible}
+        onOk={handleUpdateAffectation}
+        onCancel={() => {
+          setIsEditModalVisible(false);
+          setSelectedStage(null);
+          setSelectedTeacherId(null);
+        }}
+        okText="Enregistrer"
+        cancelText="Annuler"
+        width={800}
+        confirmLoading={editLoading}
+      >
+        <div style={{ display: "flex", gap: 24 }}>
+          <div style={{ flex: 1 }}>
+            <Title level={5} style={{ marginBottom: 16 }}>
+              Liste des stages
+            </Title>
+            <List
+              bordered
+              dataSource={stages}
+              renderItem={(stage) => (
+                <List.Item
+                  onClick={() => {
+                    setSelectedStage(stage);
+                    setSelectedTeacherId(stage.enseignant?._id || null);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    backgroundColor:
+                      selectedStage?.stage._id === stage.stage._id
+                        ? "#f0f7ff"
+                        : "transparent",
+                    padding: "8px 12px",
+                  }}
+                >
+                  <Space direction="vertical" size={0}>
+                    <Text strong>{stage.stage.titreSujet}</Text>
+                    <Text type="secondary">
+                      {stage.etudiant.nom} {stage.etudiant.prenom}
+                    </Text>
+                    {stage.enseignant && (
+                      <Text type="secondary">
+                        Enseignant actuel: {stage.enseignant.nom}{" "}
+                        {stage.enseignant.prenom}
+                      </Text>
+                    )}
+                  </Space>
+                </List.Item>
+              )}
+            />
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <Title level={5} style={{ marginBottom: 16 }}>
+              Liste des enseignants
+            </Title>
             <Input
               placeholder="Rechercher un enseignant..."
               prefix={<SearchOutlined />}
@@ -582,120 +708,35 @@ const [publishing, setPublishing] = useState(false);
               onChange={(e) => setSearchText(e.target.value)}
               style={{ marginBottom: 16 }}
             />
-            <Checkbox.Group
+            <Radio.Group
+              value={selectedTeacherId}
+              onChange={(e) => setSelectedTeacherId(e.target.value)}
               style={{ width: "100%" }}
-              value={selectedTeachers}
-              onChange={setSelectedTeachers}
             >
               <Space direction="vertical" style={{ width: "100%" }}>
                 {filteredTeachers.map((teacher) => (
-                  <Checkbox key={teacher._id} value={teacher._id}>
-                    <Text strong>
-                      {teacher.nom} {teacher.prenom}
-                    </Text>
-                    <Text type="secondary">{teacher.email}</Text>
-                  </Checkbox>
+                  <Radio
+                    key={teacher._id}
+                    value={teacher._id}
+                    style={{
+                      display: "block",
+                      marginBottom: 8,
+                      padding: "8px 12px",
+                    }}
+                  >
+                    <Space direction="vertical" size={0}>
+                      <Text strong>
+                        {teacher.nom} {teacher.prenom}
+                      </Text>
+                      <Text type="secondary">{teacher.email}</Text>
+                    </Space>
+                  </Radio>
                 ))}
               </Space>
-            </Checkbox.Group>
-          </Modal>
-
-          <Modal
-            title="Modification des affectations"
-            open={isEditModalVisible}
-            onOk={handleUpdateAffectation}
-            onCancel={() => {
-              setIsEditModalVisible(false);
-              setSelectedStage(null);
-              setSelectedTeacherId(null);
-            }}
-            okText="Enregistrer"
-            cancelText="Annuler"
-            width={800}
-            confirmLoading={editLoading}
-          >
-            <div style={{ display: "flex", gap: 24 }}>
-              <div style={{ flex: 1 }}>
-                <Title level={5} style={{ marginBottom: 16 }}>
-                  Liste des stages
-                </Title>
-                <List
-                  bordered
-                  dataSource={stages}
-                  renderItem={(stage) => (
-                    <List.Item
-                      onClick={() => {
-                        setSelectedStage(stage);
-                        setSelectedTeacherId(stage.enseignant?._id || null);
-                      }}
-                      style={{
-                        cursor: "pointer",
-                        backgroundColor:
-                          selectedStage?.stage._id === stage.stage._id
-                            ? "#f0f7ff"
-                            : "transparent",
-                        padding: "8px 12px",
-                      }}
-                    >
-                      <Space direction="vertical" size={0}>
-                        <Text strong>{stage.stage.titreSujet}</Text>
-                        <Text type="secondary">
-                          {stage.etudiant.nom} {stage.etudiant.prenom}
-                        </Text>
-                        {stage.enseignant && (
-                          <Text type="secondary">
-                            Enseignant actuel: {stage.enseignant.nom}{" "}
-                            {stage.enseignant.prenom}
-                          </Text>
-                        )}
-                      </Space>
-                    </List.Item>
-                  )}
-                />
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <Title level={5} style={{ marginBottom: 16 }}>
-                  Liste des enseignants
-                </Title>
-                <Input
-                  placeholder="Rechercher un enseignant..."
-                  prefix={<SearchOutlined />}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  style={{ marginBottom: 16 }}
-                />
-                <Radio.Group
-                  value={selectedTeacherId}
-                  onChange={(e) => setSelectedTeacherId(e.target.value)}
-                  style={{ width: "100%" }}
-                >
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {filteredTeachers.map((teacher) => (
-                      <Radio
-                        key={teacher._id}
-                        value={teacher._id}
-                        style={{
-                          display: "block",
-                          marginBottom: 8,
-                          padding: "8px 12px",
-                        }}
-                      >
-                        <Space direction="vertical" size={0}>
-                          <Text strong>
-                            {teacher.nom} {teacher.prenom}
-                          </Text>
-                          <Text type="secondary">{teacher.email}</Text>
-                        </Space>
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
-              </div>
-            </div>
-          </Modal>
-        </Space>
-      </div>
+            </Radio.Group>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

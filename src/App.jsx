@@ -26,6 +26,7 @@ import ListeSoutenance from "./pages/pfa/listSoutenance/ListeSoutenance";
 import StageDetails from "./pages/stageEte/admin/DetailsStage";
 import PeriodManagement from "./pages/stageEte/admin/PeriodManagement";
 import AffectationView from "./pages/stageEte/student/AffectationView";
+import TeacherDetailsStage from "./pages/stageEte/TeacherDetailsStage";
 
 export const UserContext = createContext();
 
@@ -165,7 +166,7 @@ function App() {
 
           {/* Routes protégées pour enseignants et étudiants */}
           {token &&
-            (user.role === "enseignant" || user.role === "etudiant") && (
+            (user?.role === "enseignant" || user?.role === "etudiant") && (
               <>
                 <Route
                   path="/home"
@@ -215,11 +216,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/planning-stages" element={<PlanningStages />} />
-                <Route
-                  path="/affectation/:type"
-                  element={<AffectationView />}
-                />
                 <Route
                   path="/internship/:type/:id"
                   element={
@@ -227,6 +223,11 @@ function App() {
                       <TeacherDetailsStage />
                     </ProtectedRoute>
                   }
+                />
+                <Route path="/planning-stages" element={<PlanningStages />} />
+                <Route
+                  path="/affectation/:type"
+                  element={<AffectationView />}
                 />
               </>
             )}

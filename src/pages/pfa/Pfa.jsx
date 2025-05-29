@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import SidebarLayout from "../../components/Sidebar/Sidebar";
 import TableData from "../../components/table/TableData";
-import { Space, Spin } from "antd";
+import { Select, Space, Spin } from "antd";
 import moment from "moment";
 import ButtonModel from "../../components/button/Button";
 import { PlusOutlined } from "@ant-design/icons";
@@ -11,6 +11,8 @@ import AddPeriod from "./addPeriod/AddPeriod";
 import { useNavigate } from "react-router-dom";
 import { fetchPeriod } from "../../services/pfaServices"; // Import de la fonction pour récupérer les périodes
 import UpdatePeriod from "./updatePeriod/UpdatePeriod";
+import dayjs from "dayjs";
+import { getLastAcademicYear } from "../../services/appServices";
 
 function Pfa() {
   const navigate = useNavigate();
@@ -22,6 +24,9 @@ function Pfa() {
   const [isModifying, setIsModifying] = useState(false);
   const [isConsulting, setIsConsulting] = useState(false);
   const [infoPeriod, setInfoPeriod] = useState(null);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [selectedYearFilter, setSelectedYearFilter] = useState(null);
+  const [currentAcademicYear, setCurrentAcademicYear] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,19 +37,51 @@ function Pfa() {
   // Charger les périodes au montage du composant
   useEffect(() => {
     const loadPeriods = async () => {
-      const data = await fetchPeriod();
-      console.log("Périodes récupérées :", data);
-      setPeriods(data); // Mettre à jour l'état avec les données récupérées
+      setLoading(true);
+      try {
+        const academicYearResponse = await getLastAcademicYear();
+        const academicYear = academicYearResponse.data;
+        setCurrentAcademicYear(academicYear);
 
-      setLoading(false);
+        const defaultYear = academicYear.year; // ex: "2025-2026"
+
+        const data = await fetchPeriod();
+        console.log("Périodes récupérées :", data);
+
+        // Récupérer toutes les années uniques disponibles
+        const years = [...new Set(data.map((period) => period.year))]
+          .sort()
+          .reverse();
+        setAvailableYears(years);
+
+        const yearToUse = selectedYearFilter || defaultYear;
+
+        // Filtrer les périodes selon l'année choisie
+        const filtered = data.filter((period) => period.year === yearToUse);
+        setPeriods(filtered);
+
+        if (!selectedYearFilter) {
+          setSelectedYearFilter(defaultYear);
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors du chargement ou filtrage des périodes :",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadPeriods();
-  }, []);
+  }, [selectedYearFilter]);
 
   const refreshData = async () => {
     const data = await fetchPeriod();
-    setPeriods(data); // Mettre à jour l'état avec les données récupérées
+    const filtered = data.filter(
+      (periode) => periode.year === selectedYearFilter
+    );
+    setPeriods(filtered);
   };
 
   // Ouvrir le modal
@@ -175,7 +212,22 @@ function Pfa() {
             <Spin size="large" />
           </div>
         ) : (
-          <TableData columns={columns} data={periods} />
+          <>
+            <Select
+              placeholder="Filtrer par année"
+              style={{ width: 200, marginLeft: 10 }}
+              value={selectedYearFilter}
+              onChange={(value) => setSelectedYearFilter(value || null)}
+              allowClear
+            >
+              {availableYears.map((year) => (
+                <Select.Option key={year} value={year}>
+                  {year}
+                </Select.Option>
+              ))}
+            </Select>
+            <TableData columns={columns} data={periods} />
+          </>
         )}
       </div>
 

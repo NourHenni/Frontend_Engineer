@@ -20,12 +20,9 @@ const PfaSelectionForm = ({ isModalOpen, setIsModalOpen, title }) => {
         // 1. Get academic year and extract second part (e.g., "2026" from "2025-2026")
         const academicYearData = await getLastAcademicYear();
         console.log("Année académique:", academicYearData);
-        if (academicYearData?.year?.includes("-")) {
-          const [_, endYear] = academicYearData.year.split("-");
+        if (academicYearData?.data.year?.includes("-")) {
+          const [_, endYear] = academicYearData.data.year.split("-");
           setYearPrefix(endYear);
-        } else {
-          const fallbackYear = (new Date().getFullYear() + 1).toString();
-          setYearPrefix(fallbackYear);
         }
 
         // 2. Get published PFA codes

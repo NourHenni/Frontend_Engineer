@@ -99,6 +99,9 @@ function ListeSoutenance() {
 
         if (user.role === "etudiant") {
           data = user.pfa ? await fetchMySoutenance() : [];
+        }
+        if (user.role === "enseignant") {
+          data = user.pfa ? await fetchMySoutenances() : [];
         } else {
           const fetcher = roleToFetcher[user.role];
           data = fetcher ? await fetcher() : [];

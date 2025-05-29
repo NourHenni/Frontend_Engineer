@@ -133,3 +133,48 @@
   text-align: center;
   padding: 40px;
 }
+
+
+
+
+/* Conteneur du bouton */
+.button-container {
+    display: flex;
+    justify-content: flex-end; /* Aligner les boutons à droite */
+    align-items: center;
+    margin-top: 20px;
+    gap: 10px; /* Espacement uniforme entre les boutons */
+}
+
+
+
+.button-button {
+    cursor: pointer; /* Ajoutez cette règle */
+    background-color: #0a91d1;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 400;
+    padding: 10px 10px 10px 10px;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.button-button:hover {
+    background-color: #40a9ff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+
+
+/* Effet de clic (focus) */
+.button-button:focus {
+    outline: none; /* Supprime l'effet de focus par défaut */
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.3); /* Effet visuel de focus */
+}
+
+/* Icône */
+.button-button .anticon {
+    margin-right: 8px; /* Espacement entre l'icône et le texte */
+}

@@ -23,6 +23,7 @@ import {
   Typography,
   Radio,
 } from "antd";
+import { toast } from "sonner";
 
 // Icons
 import {
@@ -41,7 +42,7 @@ import "./admin/StageDetails.css";
 
 const { Title, Text } = Typography;
 
-function TeacherDetailsStage() {
+const TeacherDetailsStage = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
 
@@ -119,21 +120,28 @@ function TeacherDetailsStage() {
 
   const handlePlanSoutenance = async () => {
     try {
+      // Valider les champs du formulaire
       const values = await form.validateFields();
 
-      const jour = values.jour.format("YYYY-MM-DD");
+      const selectedDate = values.jour;
+      const today = dayjs().startOf("day");
+
+      // Vérifie si la date sélectionnée est antérieure à aujourd'hui
+      if (selectedDate.isBefore(today)) {
+        message.error("La date de soutenance ne peut pas être dans le passé.");
+        return;
+      }
+
+      const jour = selectedDate.format("YYYY-MM-DD");
       const horaire = values.horaire.format("HH:mm");
       const lien = values.lien;
 
       const token = localStorage.getItem("token");
+      console.log("Données envoyées :", { type, id, horaire, lien });
 
       await axios.post(
         `http://localhost:5000/internship/${type}/${id}`,
-        {
-          jour,
-          horaire,
-          lien,
-        },
+        { horaire, lien, jour },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -145,22 +153,41 @@ function TeacherDetailsStage() {
       setOpenPlanModal(false);
       form.resetFields();
       await fetchStageDetails();
-    } catch (error) {
-      console.error("Erreur planification:", error);
-      message.error("Erreur lors de la planification !");
+    } catch (errorInfo) {
+      if (errorInfo.errorFields) {
+        console.log("Échec de la validation du formulaire:", errorInfo);
+      } else {
+        console.error("Erreur lors de la planification:", errorInfo);
+
+        message.error(errorInfo.message || "Erreur lors de la planification !");
+      }
     }
   };
 
   const handleUpdateSoutenance = async () => {
     try {
+      // 1. Valider les champs du formulaire
       const values = await form.validateFields();
+
+      const selectedDate = values.jour;
+      const today = dayjs().startOf("day");
+
+      // Vérifie si la date sélectionnée est antérieure à aujourd'hui
+      if (selectedDate.isBefore(today)) {
+        message.error("La date de soutenance ne peut pas être dans le passé.");
+        return;
+      }
+
+      const jour = selectedDate.format("YYYY-MM-DD");
+      const horaire = values.horaire.format("HH:mm");
+      const lien = values.lien;
 
       await axios.patch(
         `http://localhost:5000/internship/${type}/${soutenanceId}`,
         {
-          jour: values.jour.format("YYYY-MM-DD"),
-          horaire: values.horaire.format("HH:mm"),
-          lien: values.lien,
+          jour,
+          horaire,
+          lien,
         },
         {
           headers: {
@@ -172,9 +199,13 @@ function TeacherDetailsStage() {
       message.success("Soutenance modifiée avec succès");
       setOpenEditModal(false);
       await fetchStageDetails();
-    } catch (error) {
-      console.error("Erreur :", error);
-      message.error("Erreur lors de la modification");
+    } catch (errorInfo) {
+      if (errorInfo.errorFields) {
+        console.log("Échec de la validation du formulaire:", errorInfo);
+      } else {
+        console.error("Erreur lors de la modification:", errorInfo);
+        message.error(errorInfo.message || "Erreur lors de la modification !");
+      }
     }
   };
 
@@ -554,6 +585,6 @@ function TeacherDetailsStage() {
       </div>
     </div>
   );
-}
+};
 
 export default TeacherDetailsStage;
