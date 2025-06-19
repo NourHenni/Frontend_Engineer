@@ -1,30 +1,49 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { 
-  Button, Input, InputNumber, Table, Space, Modal, Form, message, 
-  Spin, Alert, Tag, Select, Popconfirm, Switch, List,
-  notification
-} from 'antd';
-import { 
-  PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, 
+import React, { useState, useEffect, useContext } from "react";
+import {
+  Button,
+  Input,
+  InputNumber,
+  Table,
+  Space,
+  Modal,
+  Form,
+  message,
+  Spin,
+  Alert,
+  Tag,
+  Select,
+  Popconfirm,
+  Switch,
+  List,
+  notification,
+} from "antd";
+import {
+  PlusOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  MinusCircleOutlined,
   DeleteOutlined,
-  EditOutlined
-} from '@ant-design/icons';
-import Navbar from '../../components/navbar/Navbar';
-import SidebarLayout from '../../components/sidebar/Sidebar';
-import axios from 'axios';
-import { UserContext } from '../../App';
-import './Matieres.css';
-import { fetchMatiereById } from '../../services/matieresServices';
+  EditOutlined,
+} from "@ant-design/icons";
+import Navbar from "../../components/navbar/Navbar";
+import SidebarLayout from "../../components/sidebar/Sidebar";
+import axios from "axios";
+import { UserContext } from "../../App";
+import "./Matieres.css";
+import { fetchMatiereById } from "../../services/matieresServices";
 
 const { Option } = Select;
+
 const Matieres = () => {
   // Context et états
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedMatiereForDetails, setSelectedMatiereForDetails] = useState(null);
+  const [selectedMatiereForDetails, setSelectedMatiereForDetails] =
+    useState(null);
   const [enseignants, setEnseignants] = useState([]);
   const [loadingEnseignants, setLoadingEnseignants] = useState(false);
+
   const { role: userRole } = useContext(UserContext) || {};
   const { userId: userId } = useContext(UserContext) || {};
   const [form] = Form.useForm();
@@ -77,6 +96,7 @@ const Matieres = () => {
     });
     setLiveCounts(initialCounts);
   }, [data]);
+  
   const [evaluationsModalVisible, setEvaluationsModalVisible] = useState(false);
   const [currentMatiereEvaluations, setCurrentMatiereEvaluations] =
     useState(null);
@@ -112,111 +132,108 @@ const Matieres = () => {
   };
   // Chargement initial des données
 
- useEffect(() => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // Récupération des enseignants
-// Composant React
-const fetchEnseignants = async () => {
-  try {
-    setLoadingEnseignants(true);
+  useEffect(() => {
     const token = localStorage.getItem("token");
-    
-    const response = await axios.get("http://localhost:5000/teachers", {
-      
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    });
+    const user = JSON.parse(localStorage.getItem("user"));
 
-    // Vérification approfondie
-    if (response.status === 200 && response.data?.model) {
-      if (Array.isArray(response.data.model)) {
-        setEnseignants(response.data.model);
-      } else {
-        throw new Error("Le format des données est invalide");
-      }
-    } else {
-      throw new Error("Réponse serveur inattendue");
-    }
+    // Récupération des enseignants
+    // Composant React
+    const fetchEnseignants = async () => {
+      try {
+        setLoadingEnseignants(true);
+        const token = localStorage.getItem("token");
 
-  } catch (error) {
-    console.error("Détails techniques :", {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
-    
-    setEnseignants([]);
-  } finally {
-    setLoadingEnseignants(false);
-  }
-};
-  // Récupération des données principales
-  const fetchData = async () => {
-    try {
-      const [matieresRes, competencesRes] = await Promise.all([
-        axios.get("http://localhost:5000/matieres", {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get("http://localhost:5000/Competences", {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-
-      let filteredMatieres = matieresRes.data;
-
-      // Filtrage pour les enseignants
-      if (user?.role === "enseignant") {
-        filteredMatieres = matieresRes.data.filter(matiere => {
-          const enseignantId = matiere.enseignant?._id?.toString() 
-            || matiere.enseignant?.toString();
-          return enseignantId === user._id && matiere.publiee;
+        const response = await axios.get("http://localhost:5000/teachers", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
-      }
 
-      if (user?.role === "etudiant") {
-        filteredMatieres = matieresRes.data.filter((matiere) => {
-          return (
-            matiere.publiee &&
-            matiere.semestre?.toString() === user.semestre?.toString() &&
-            matiere.niveau?.toString() === user.niveau?.toString()
-          );
+        // Vérification approfondie
+        if (response.status === 200 && response.data?.model) {
+          if (Array.isArray(response.data.model)) {
+            setEnseignants(response.data.model);
+          } else {
+            throw new Error("Le format des données est invalide");
+          }
+        } else {
+          throw new Error("Réponse serveur inattendue");
+        }
+      } catch (error) {
+        console.error("Détails techniques :", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
         });
+
+        setEnseignants([]);
+      } finally {
+        setLoadingEnseignants(false);
       }
+    };
+    // Récupération des données principales
+    const fetchData = async () => {
+      try {
+        const [matieresRes, competencesRes] = await Promise.all([
+          axios.get("http://localhost:5000/matieres", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5000/Competences", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-      setState(prev => ({
-        ...prev,
-        data: filteredMatieres.map(item => ({
-          ...item,
-          key: item._id,
-          competences: item.competences || [],
-        })),
-        competences: competencesRes.data,
-        loading: false,
-      }));
+        let filteredMatieres = matieresRes.data;
 
-    } catch (err) {
-      console.error("Erreur global fetch:", err);
-      setState(prev => ({ 
-        ...prev, 
-        error: err.response?.data?.message || "Erreur serveur",
-        loading: false 
-      }));
-      message.error("Échec du chargement des données");
-    }
-  };
+        // Filtrage pour les enseignants
+        if (user?.role === "enseignant") {
+          filteredMatieres = matieresRes.data.filter((matiere) => {
+            const enseignantId =
+              matiere.enseignant?._id?.toString() ||
+              matiere.enseignant?.toString();
+            return enseignantId === user._id && matiere.publiee;
+          });
+        }
 
-  const fetchAllData = async () => {
-    await fetchEnseignants();
-    await fetchData();
-  };
- fetchData();
-  fetchAllData();
-}, []); // Ajouter les dépendances nécessaires si l'utilisateur peut changer
-  
+        if (user?.role === "etudiant") {
+          filteredMatieres = matieresRes.data.filter((matiere) => {
+            return (
+              matiere.publiee &&
+              matiere.semestre?.toString() === user.semestre?.toString() &&
+              matiere.niveau?.toString() === user.niveau?.toString()
+            );
+          });
+        }
+
+        setState((prev) => ({
+          ...prev,
+          data: filteredMatieres.map((item) => ({
+            ...item,
+            key: item._id,
+            competences: item.competences || [],
+          })),
+          competences: competencesRes.data,
+          loading: false,
+        }));
+      } catch (err) {
+        console.error("Erreur global fetch:", err);
+        setState((prev) => ({
+          ...prev,
+          error: err.response?.data?.message || "Erreur serveur",
+          loading: false,
+        }));
+        message.error("Échec du chargement des données");
+      }
+    };
+
+    const fetchAllData = async () => {
+      await fetchEnseignants();
+      await fetchData();
+    };
+    fetchData();
+    fetchAllData();
+  }, []); // Ajouter les dépendances nécessaires si l'utilisateur peut changer
 
   const handleProposeModification = (record) => {
     setSelectedMatiereProposal(record);
@@ -227,8 +244,6 @@ const fetchEnseignants = async () => {
       const intervalId = setInterval(() => {
         checkForUpdates(record._id);
       }, 5000);
-
-
 
       return () => clearInterval(intervalId); // Nettoyage
     }
@@ -460,17 +475,17 @@ const fetchEnseignants = async () => {
 
           {userRole === "admin" && (
             <>
-
-              <Button onClick={() => handleEdit(record)} icon={<EditOutlined/>}></Button>
-
+              <Button
+                onClick={() => handleEdit(record)}
+                icon={<EditOutlined />}
+              ></Button>
               <Popconfirm
                 title="Confirmer la suppression ?"
                 onConfirm={() => handleDelete(record)}
                 okText="Oui"
                 cancelText="Non"
               >
-                <Button icon={<DeleteOutlined/>}></Button>
-
+                <Button icon={<DeleteOutlined />}></Button>
               </Popconfirm>
               <Button
                 icon={
@@ -521,82 +536,63 @@ const fetchEnseignants = async () => {
     },
   ];
 
+  const showDetails = async (record) => {
+    try {
+      console.log(
+        "Détails matière - Historique:",
+        record.historiqueModifications
+      );
 
-const showDetails =  (record) => {
-  try {
-    console.log("Détails matière - Historique:", record.historiqueModifications);
+      const data = await fetchMatiereById(record._id); // Corrigé ici
 
-    const data = fetchMatiereById(record._id);
-    setSelectedMatiereForDetails(data);
-    setIsDetailsModalOpen(true);
-    // Vérification améliorée des permissions
-    const isEnseignantAssigned = 
-      record.enseignant?._id === userId || 
-      record.enseignant?.toString() === userId;
-      
-    if (userRole === "enseignant" && !isEnseignantAssigned) {
-      message.error("Vous n'avez pas accès à cette matière");
-      return;
-    }
+      // Vérification améliorée des permissions
+      const isEnseignantAssigned =
+        record.enseignant?._id === userId ||
+        record.enseignant?.toString() === userId;
 
-// Fonction pour obtenir le nom de l'enseignant
-const getEnseignantName = () => {
-  if (!record.enseignant) return "Non assigné";
-  
-  if (typeof record.enseignant === "object") {
-    return `${record.enseignant.nom} ${record.enseignant.prenom}`;
-  }  
-  // Si c'est une string, chercher dans la liste des enseignants
-  const enseignant = enseignants.find(e => e._id === record.enseignant);
-  return enseignant 
-    ? `${enseignant.nom} ${enseignant.prenom}` 
-    : record.enseignant.nom;
-};
+      if (userRole === "enseignant" && !isEnseignantAssigned) {
+        message.error("Vous n'avez pas accès à cette matière");
+        return;
+      }
 
+      // Fonction pour obtenir le nom de l'enseignant
+      const getEnseignantName = () => {
+        if (!record.enseignant) return "Non assigné";
+        if (typeof record.enseignant === "object") {
+          return `${record.enseignant.nom} ${record.enseignant.prenom}`;
+        }
+        const enseignant = enseignants.find((e) => e._id === record.enseignant);
+        return enseignant
+          ? `${enseignant.nom} ${enseignant.prenom}`
+          : "Inconnu";
+      };
 
+      const getStatusColor = (status) =>
+        ({
+          Terminee: "green",
+          EnCours: "blue",
+        }[status] || "gray");
 
+      const renderCurriculum = () => {
+        if (!record.Curriculum?.length) return <p>Aucun curriculum défini</p>;
 
+        return record.Curriculum.map((chapitre, index) => (
+          <div key={index} className="curriculum-chapitre">
+            <h4>
+              Chapitre {index + 1}: {chapitre.titreChapitre}
+            </h4>
+            <div className="chapitre-details">
+              <p>
+                Statut:{" "}
+                <Tag color={getStatusColor(chapitre.AvancementChap)}>
+                  {chapitre.AvancementChap}
+                </Tag>
+              </p>
 
-    const getStatusColor = (status) =>
-      ({
-        Terminee: "green",
-        EnCours: "blue",
-      }[status] || "gray");
-
-    const renderCurriculum = () => {
-      if (!record.Curriculum?.length) return <p>Aucun curriculum défini</p>;
-
-      return record.Curriculum.map((chapitre, index) => (
-        <div key={index} className="curriculum-chapitre">
-          <h4>
-            Chapitre {index + 1}: {chapitre.titreChapitre}
-          </h4>
-          <div className="chapitre-details">
-            <p>
-              Statut:{" "}
-              <Tag color={getStatusColor(chapitre.AvancementChap)}>
-                {chapitre.AvancementChap}
-              </Tag>
-            </p>
-
-            <h5>Sections:</h5>
-            <div className="sections-list">
-              {chapitre.sections?.map((section, sIndex) => (
-                <div key={sIndex} className="section-item">
-                  <p>
-                    <strong>
-                      Section {sIndex + 1}: {section.nomSection}
-                    </strong>
-                  </p>
-                  <p>Description: {section.Description}</p>
-                  <p>
-                    Statut:{" "}
-                    <Tag color={getStatusColor(section.AvancementSection)}>
-                      {section.AvancementSection}
-                    </Tag>
-                  </p>
-                  {section.dateFinSection && (
-
+              <h5>Sections:</h5>
+              <div className="sections-list">
+                {chapitre.sections?.map((section, sIndex) => (
+                  <div key={sIndex} className="section-item">
                     <p>
                       <strong>
                         Section {sIndex + 1}: {section.nomSection}
@@ -623,111 +619,111 @@ const getEnseignantName = () => {
         ));
       };
 
+      const historyColumns = [
+        {
+          title: "Date",
+          dataIndex: "dateModification",
+          key: "date",
+          render: (date) => new Date(date).toLocaleString(),
+          sorter: (a, b) =>
+            new Date(a.dateModification) - new Date(b.dateModification),
+        },
+        {
+          title: "Modifications",
+          key: "modifications",
+          render: (_, entry) => {
+            if (!entry.contenu) return <span>Aucune modification</span>;
+            const champsModifies = Object.entries(entry.contenu)
+              .filter(([key]) => key !== "Curriculum")
+              .filter(
+                ([_, value]) =>
+                  value.ancien !== undefined &&
+                  value.nouveau !== undefined &&
+                  value.ancien !== value.nouveau
+              );
 
-    const historyColumns = [
-      {
-        title: "Date",
-        dataIndex: "dateModification",
-        key: "date",
-        render: (date) => new Date(date).toLocaleString(),
-        sorter: (a, b) => new Date(a.dateModification) - new Date(b.dateModification),
-      },
-      {
-        title: "Modifications",
-        key: "modifications",
-        render: (_, entry) => {
-          // Accédez à entry.contenu au lieu de ancienneValeur/nouvelleValeur
-          if (!entry.contenu) return <span>Aucune modification</span>;
-    
-          const champsModifies = Object.entries(entry.contenu)
-            .filter(([key]) => key !== "Curriculum")
-            .filter(([_, value]) => 
-              value.ancien !== undefined && 
-              value.nouveau !== undefined &&
-              value.ancien !== value.nouveau
+            if (champsModifies.length === 0)
+              return <span>Aucune modification</span>;
+
+            return (
+              <ul className="changes-list">
+                {champsModifies.map(([key, { ancien, nouveau }]) => (
+                  <li key={key}>
+                    <strong>{key}:</strong>{" "}
+                    <span
+                      style={{
+                        color: "red",
+                        textDecoration: "line-through",
+                        marginRight: "8px",
+                      }}
+                    >
+                      {String(ancien)}
+                    </span>
+                    →
+                    <span style={{ color: "green", marginLeft: "8px" }}>
+                      {String(nouveau)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             );
-    
-          if (champsModifies.length === 0) return <span>Aucune modification</span>;
-    
-          return (
-            <ul className="changes-list">
-              {champsModifies.map(([key, {ancien, nouveau}]) => (
-                <li key={key}>
-                  <strong>{key}:</strong>{" "}
-                  <span style={{ color: "red", textDecoration: "line-through", marginRight: "8px" }}>
-                    {String(ancien)}
-                  </span>
-                  →
-                  <span style={{ color: "green", marginLeft: "8px" }}>
-                    {String(nouveau)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          );
-        }
-      }
-    ];
-    Modal.info({
-      title: `${(record.CodeMatiere)}`,
-      width: 1000,
-      content: (
-        <div className="matiere-details">
-          <h2>Détails du matiére: </h2>
-           <h2>
-            "{record.Nom}"
-           </h2>
+          },
+        },
+      ];
 
+      Modal.info({
+        title: `${record.CodeMatiere}`,
+        width: 1000,
+        content: (
+          <div className="matiere-details">
+            <h2>Détails du matiére: </h2>
+            <h2>"{record.Nom}"</h2>
 
-          <div className="infos-grid">
-            <div>
-              <strong>Crédits:</strong> {record.Credit}
-            </div>
-            <div>
-              <strong>Volume Horaire:</strong> {record.VolumeHoraire}h
-            </div>
-            <div>
-              <strong>Niveau:</strong> {record.niveau}
-            </div>
-            <div>
-              <strong>Semestre:</strong> {record.semestre}
-            </div>
-            <div>
-              <strong>Coefficient:</strong> {record.Coefficient}
-            </div>
-            <div>
-              <strong>Heures de cours:</strong> {record.NbHeuresCours}
-            </div>
-            <div>
-              <strong>Heures de TD:</strong> {record.NbHeuresTD}
-            </div>
-            <div>
-              <strong>Heures de TP:</strong> {record.NbHeuresTP}
-            </div>
-            {userRole === "admin" && (
-
-            <div >
-              <strong >Enseignant:</strong>
-              {getEnseignantName()}              
-            </div>
-            )}
-            <div>
-              <strong>Année:</strong> {record.Annee}
-
-
-
+            <div className="infos-grid">
+              <div>
+                <strong>Crédits:</strong> {record.Credit}
+              </div>
+              <div>
+                <strong>Volume Horaire:</strong> {record.VolumeHoraire}h
+              </div>
+              <div>
+                <strong>Niveau:</strong> {record.niveau}
+              </div>
+              <div>
+                <strong>Semestre:</strong> {record.semestre}
+              </div>
+              <div>
+                <strong>Coefficient:</strong> {record.Coefficient}
+              </div>
+              <div>
+                <strong>Heures de cours:</strong> {record.NbHeuresCours}
+              </div>
+              <div>
+                <strong>Heures de TD:</strong> {record.NbHeuresTD}
+              </div>
+              <div>
+                <strong>Heures de TP:</strong> {record.NbHeuresTP}
+              </div>
+              {userRole === "admin" && (
+                <div>
+                  <strong>Enseignant:</strong> {getEnseignantName()}
+                </div>
+              )}
+              <div>
+                <strong>Année:</strong> {record.Annee}
+              </div>
             </div>
 
             <h3>Compétences associées</h3>
             <ul>
-              {data.competences?.length > 0 ? (
-                data.competences.map((c, i) => (
+              {record.competences?.length ? (
+                record.competences.map((c, i) => (
                   <li key={i}>
-                    {c.nomCompetence} : {c.codeCompetence}
+                    {c.nomCompetence} ({c.codeCompetence})
                   </li>
                 ))
               ) : (
-                <li>Aucune compétence associée</li>
+                <li>Aucune compétence</li>
               )}
             </ul>
 
@@ -739,14 +735,12 @@ const getEnseignantName = () => {
                 <h3 style={{ marginTop: 24 }}>Historique des modifications</h3>
                 <Table
                   columns={historyColumns}
-                  dataSource={data.historiqueModifications || []}
+                  dataSource={record.historiqueModifications || []}
                   rowKey="_id"
                   pagination={{ pageSize: 5 }}
                   scroll={{ y: 240 }}
                   bordered
-                  locale={{
-                    emptyText: "Aucune modification enregistrée",
-                  }}
+                  locale={{ emptyText: "Aucune modification enregistrée" }}
                 />
               </>
             )}
@@ -758,61 +752,24 @@ const getEnseignantName = () => {
     }
   };
 
-          <h3>Compétences associées</h3>
-          <ul>
-            {record.competences.map((c, i) => (
-              <li key={i}>{c.nomCompetence} ({c.codeCompetence})</li>
-            ))}
-          </ul>
+  const checkForUpdates = async (matiereId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/matieres/${matiereId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-
-          <h3>Curriculum</h3>
-          <div className="curriculum-container">{renderCurriculum()}</div>
-
-          {(userRole === "admin" || userRole === "enseignant") && (
-            <>
-              <h3 style={{ marginTop: 24 }}>Historique des modifications</h3>
-              <Table
-                columns={historyColumns}
-                dataSource={record.historiqueModifications || []}
-                rowKey="_id"
-                pagination={{ pageSize: 5 }}
-                scroll={{ y: 240 }}
-                bordered
-                locale={{
-                  emptyText: "Aucune modification enregistrée",
-                }}
-              />
-            </>
-          )}
-        </div>
-      ),
-    });
-  } catch (error) {
-    console.error("Erreur lors de la récupération des détails:", error);
-  }
-};
-
-
-
-const checkForUpdates = async (matiereId) => {
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.get(`http://localhost:5000/matieres/${matiereId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    
-    setState(prev => ({
-      ...prev,
-      data: prev.data.map(m => 
-        m._id === matiereId ? response.data : m
-      )
-    }));
-  } catch (err) {
-    console.error("Erreur de rafraîchissement:", err);
-  }
-};
-
+      setState((prev) => ({
+        ...prev,
+        data: prev.data.map((m) => (m._id === matiereId ? response.data : m)),
+      }));
+    } catch (err) {
+      console.error("Erreur de rafraîchissement:", err);
+    }
+  };
 
   // Gestion des modifications
   const handleEdit = (record) => {
@@ -862,7 +819,7 @@ const checkForUpdates = async (matiereId) => {
 
       setState((prev) => ({
         ...prev,
-          data: prev.data.map((item) =>
+        data: prev.data.map((item) =>
           item._id === record._id ? { ...item, publiee: !item.publiee } : item
         ),
       }));
@@ -902,9 +859,7 @@ const checkForUpdates = async (matiereId) => {
           NbHeuresCours: Number(values.NbHeuresCours),
           NbHeuresTD: Number(values.NbHeuresTD),
           NbHeuresTP: Number(values.NbHeuresTP),
-
-          enseignant:values.enseignant,
-
+          enseignant: values.enseignant,
           Annee: Number(values.Annee),
           Credit: Number(values.Credit),
           publiee: values.publiee,
@@ -1288,89 +1243,6 @@ const checkForUpdates = async (matiereId) => {
     </Form.Item>
   </div>;
 
-        {/* Section Organisation */}
-        <div className="form-section">
-          <Form.Item
-            name="niveau"
-            label="niveau"
-            rules={[{ required: true, message: "Sélection obligatoire" }]}
-          >
-            <Select disabled={userRole === "enseignant"}>
-              <Option value="1">1ère année</Option>
-              <Option value="2">2ème année</Option>
-              <Option value="3">3ème année</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="semestre"
-            label="semestre"
-            rules={[{ required: true, message: "Sélectionnez un semestre" }]}
-          >
-            <Select disabled={userRole === "enseignant"}>
-              <Option value="S1">S1</Option>
-              <Option value="S2">S2</Option>
-              
-            </Select>
-          </Form.Item>
-        <Form.Item
-  name="enseignant"
-  label="Enseignant"
-  rules={[{ required: true, message: "Sélection obligatoire" }]}
->
-  <Select
-    loading={loadingEnseignants}
-    placeholder={loadingEnseignants ? "Chargement..." : "Sélectionnez un enseignant"}
-  >
-    {/* Vérification du type avant map */}
-    {Array.isArray(enseignants) && enseignants.map(ens => (
-      <Select.Option key={ens._id} value={ens._id}>
-        {ens.nom} {ens.prenom}
-      </Select.Option>
-    ))}
-    
-    {/* Fallback si tableau vide */}
-    {enseignants.length === 0 && !loadingEnseignants && (
-      <Select.Option disabled value="none">
-        Aucun enseignant trouvé
-      </Select.Option>
-    )}
-  </Select>
-</Form.Item>
-
-          <Form.Item
-            name="Annee"
-            label="Année universitaire"
-            rules={[
-              {
-                required: true,
-                type: "number",
-                min: 2000,
-                max: 2100,
-                message: "Année entre 2000 et 2100",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              disabled={userRole === "enseignant"}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="Credit"
-            label="Crédits"
-            rules={[{ required: true, type: "number", min: 0 }]}
-          >
-            <InputNumber
-              min={0}
-              style={{ width: "100%" }}
-              disabled={userRole === "enseignant"}
-            />
-          </Form.Item>
-        </div>
-
-
   // Rendu du formulaire
   const renderFormFields = () => {
     const { isCurriculumEdit } = state;
@@ -1510,32 +1382,35 @@ const checkForUpdates = async (matiereId) => {
               </Form.Item>
             </div>
 
-
             <Form.Item
-  name="enseignant"
-  label="Enseignant"
-  rules={[{ required: true, message: "Sélection obligatoire" }]}
->
-  <Select
-    loading={loadingEnseignants}
-    placeholder={loadingEnseignants ? "Chargement..." : "Sélectionnez un enseignant"}
-  >
-    {/* Vérification du type avant map */}
-    {Array.isArray(enseignants) && enseignants.map(ens => (
-      <Select.Option key={ens._id} value={ens._id}>
-        {ens.nom} {ens.prenom}
-      </Select.Option>
-    ))}
-    
-    {/* Fallback si tableau vide */}
-    {enseignants.length === 0 && !loadingEnseignants && (
-      <Select.Option disabled value="none">
-        Aucun enseignant trouvé
-      </Select.Option>
-    )}
-  </Select>
-</Form.Item>
+              name="enseignant"
+              label="Enseignant"
+              rules={[{ required: true, message: "Sélection obligatoire" }]}
+            >
+              <Select
+                loading={loadingEnseignants}
+                placeholder={
+                  loadingEnseignants
+                    ? "Chargement..."
+                    : "Sélectionnez un enseignant"
+                }
+              >
+                {/* Vérification du type avant map */}
+                {Array.isArray(enseignants) &&
+                  enseignants.map((ens) => (
+                    <Select.Option key={ens._id} value={ens._id}>
+                      {ens.nom} {ens.prenom}
+                    </Select.Option>
+                  ))}
 
+                {/* Fallback si tableau vide */}
+                {enseignants.length === 0 && !loadingEnseignants && (
+                  <Select.Option disabled value="none">
+                    Aucun enseignant trouvé
+                  </Select.Option>
+                )}
+              </Select>
+            </Form.Item>
             {/* Section Organisation */}
             <div className="form-section">
               <Form.Item
