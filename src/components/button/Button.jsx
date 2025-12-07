@@ -1,6 +1,7 @@
 import { Button } from "antd";
-
+import PropTypes from "prop-types";
 import "./Buton.css";
+
 function ButtonModel({ text, icon, onClick }) {
   return (
     <div className="button-container">
@@ -15,5 +16,18 @@ function ButtonModel({ text, icon, onClick }) {
     </div>
   );
 }
+
+// Validation des props
+ButtonModel.propTypes = {
+  text: PropTypes.string.isRequired,
+  icon: PropTypes.node,
+  onClick: PropTypes.func,
+};
+
+// Valeurs par défaut optionnelles (si besoin)
+ButtonModel.defaultProps = {
+  icon: null,
+  onClick: () => {},
+};
 
 export default ButtonModel;

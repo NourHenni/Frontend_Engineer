@@ -35,46 +35,47 @@ function Pfa() {
   });
 
   // Charger les périodes au montage du composant
-  useEffect(() => {
-    const loadPeriods = async () => {
-      setLoading(true);
-      try {
-        const academicYearResponse = await getLastAcademicYear();
-        const academicYear = academicYearResponse.data;
-        setCurrentAcademicYear(academicYear);
+ useEffect(() => {
+  const loadPeriods = async () => {
+    setLoading(true);
+    try {
+      const academicYearResponse = await getLastAcademicYear();
+      const academicYear = academicYearResponse.data;
+      setCurrentAcademicYear(academicYear);
+      const defaultYear = academicYear.year;
 
-        const defaultYear = academicYear.year; // ex: "2025-2026"
+      const data = await fetchPeriod();
+      console.log("Périodes récupérées :", data);
 
-        const data = await fetchPeriod();
-        console.log("Périodes récupérées :", data);
+      // Extraire et trier les années académiques de manière fiable
+      const years = [
+        ...new Set(
+          data
+            .map((period) => period.year)
+            .filter(year => year) // ignore les valeurs falsy
+        )
+      ].sort((a, b) => {
+        const startA = parseInt(a.split('-')[0], 10);
+        const startB = parseInt(b.split('-')[0], 10);
+        return startB - startA; // ordre décroissant (2025-2026, 2024-2025, ...)
+      });
 
-        // Récupérer toutes les années uniques disponibles
-        const years = [...new Set(data.map((period) => period.year))]
-          .sort()
-          .reverse();
-        setAvailableYears(years);
+      setAvailableYears(years);
+      const yearToUse = selectedYearFilter || defaultYear;
+      const filtered = data.filter((period) => period.year === yearToUse);
+      setPeriods(filtered);
 
-        const yearToUse = selectedYearFilter || defaultYear;
-
-        // Filtrer les périodes selon l'année choisie
-        const filtered = data.filter((period) => period.year === yearToUse);
-        setPeriods(filtered);
-
-        if (!selectedYearFilter) {
-          setSelectedYearFilter(defaultYear);
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors du chargement ou filtrage des périodes :",
-          error
-        );
-      } finally {
-        setLoading(false);
+      if (!selectedYearFilter) {
+        setSelectedYearFilter(defaultYear);
       }
-    };
-
-    loadPeriods();
-  }, [selectedYearFilter]);
+    } catch (error) {
+      console.error("Erreur lors du chargement ou filtrage des périodes :", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadPeriods();
+}, [selectedYearFilter]);
 
   const refreshData = async () => {
     const data = await fetchPeriod();
