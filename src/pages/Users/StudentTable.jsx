@@ -53,53 +53,53 @@ function StudentTable() {
   const [availableNiveaux, setAvailableNiveaux] = useState([]);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-const [lastAcademicYear, setLastAcademicYear] = useState(null);
+  const [lastAcademicYear, setLastAcademicYear] = useState(null);
   // Get current academic year (e.g., 2024-2025)
   const getCurrentAcademicYear = () => {
     const currentYear = new Date().getFullYear();
     return `${currentYear}-${currentYear + 1}`;
   };
   const handleNotifyDiplomeStudents = async () => {
-  try {
-    setLoading(true);
-    const result = await notifyDiplomeStudents();
-    message.success(result.message || "Students notified successfully");
-  } catch (error) {
-    message.error(error.message || "Failed to notify students");
-  } finally {
-    setLoading(false);
-  }
-};
-const fetchLastAcademicYear = async () => {
-  try {
-    const response = await getLastAcademicYear();
-    if (response.success && response.data?.year) {
-      setLastAcademicYear(response.data.year);
-      setSelectedAcademicYear(response.data.year); // Set as default filter
+    try {
+      setLoading(true);
+      const result = await notifyDiplomeStudents();
+      message.success(result.message || "Students notified successfully");
+    } catch (error) {
+      message.error(error.message || "Failed to notify students");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to fetch last academic year:", error);
-  }
-};
+  };
+  const fetchLastAcademicYear = async () => {
+    try {
+      const response = await getLastAcademicYear();
+      if (response.success && response.data?.year) {
+        setLastAcademicYear(response.data.year);
+        setSelectedAcademicYear(response.data.year); // Set as default filter
+      }
+    } catch (error) {
+      console.error("Failed to fetch last academic year:", error);
+    }
+  };
   const loadStudents = async () => {
     setLoading(true);
     try {
       const students = await fetchStudents();
       setData(students);
-      
+
       // Extract available academic years and niveaux from all students
       const years = new Set();
       const niveaux = new Set();
-      
-      students.forEach(student => {
+
+      students.forEach((student) => {
         // Add student's base niveau
         if (student.niveau) {
           niveaux.add(student.niveau.toString());
         }
-        
+
         // Add status years and niveaux
         if (student.academic_statuses && student.academic_statuses.length > 0) {
-          student.academic_statuses.forEach(status => {
+          student.academic_statuses.forEach((status) => {
             years.add(status.academic_year);
             if (status.niveau) {
               niveaux.add(status.niveau.toString());
@@ -107,9 +107,18 @@ const fetchLastAcademicYear = async () => {
           });
         }
       });
-      
-      setAvailableYears(Array.from(years).sort().reverse());
-      setAvailableNiveaux(Array.from(niveaux).sort());
+
+      setAvailableYears(
+        Array.from(years)
+          .map(Number)
+          .sort((a, b) => b - a)
+      );
+
+      setAvailableNiveaux(
+        Array.from(niveaux)
+          .map(Number)
+          .sort((a, b) => a - b)
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,7 +128,7 @@ const fetchLastAcademicYear = async () => {
 
   useEffect(() => {
     loadStudents();
-fetchLastAcademicYear(); // Add this line
+    fetchLastAcademicYear(); // Add this line
     const token = localStorage.getItem("token");
     if (token) {
       try {
@@ -139,21 +148,23 @@ fetchLastAcademicYear(); // Add this line
 
   const getStatusForYear = (student, year) => {
     if (!student.academic_statuses || year === "all") return null;
-    const status = student.academic_statuses.find(s => s.academic_year === year);
+    const status = student.academic_statuses.find(
+      (s) => s.academic_year === year
+    );
     return status || null;
   };
 
   const filteredData = data
-    .filter(student => {
+    .filter((student) => {
       // If "All" is selected for year, show all students
       if (selectedAcademicYear !== "all") {
         // Otherwise only show students with status for selected year
         const hasYearStatus = student.academic_statuses?.some(
-          s => s.academic_year === selectedAcademicYear
+          (s) => s.academic_year === selectedAcademicYear
         );
         if (!hasYearStatus) return false;
       }
-      
+
       // Filter by niveau if not "all"
       if (selectedNiveau !== "all") {
         // Check both student's base niveau and status niveaux
@@ -161,7 +172,7 @@ fetchLastAcademicYear(); // Add this line
         const studentNiveau = status?.niveau || student.niveau;
         if (studentNiveau?.toString() !== selectedNiveau) return false;
       }
-      
+
       return true;
     })
     .filter((student) =>
@@ -169,13 +180,13 @@ fetchLastAcademicYear(); // Add this line
         student[key]?.toString().toLowerCase().includes(searchText)
       )
     )
-    .map(student => {
+    .map((student) => {
       const status = getStatusForYear(student, selectedAcademicYear);
       return {
         ...student,
         currentStatus: status,
         displayNiveau: status?.niveau || student.niveau || "-",
-        displaySituation: status?.status || "-"
+        displaySituation: status?.status || "-",
       };
     });
 
@@ -185,8 +196,11 @@ fetchLastAcademicYear(); // Add this line
     const status = getStatusForYear(student, selectedAcademicYear);
     form.setFieldsValue({
       nouvelleSituation: status?.status || "passe",
-      anneeAcademique: selectedAcademicYear === "all" ? getCurrentAcademicYear() : selectedAcademicYear,
-      niveau: status?.niveau || student.niveau
+      anneeAcademique:
+        selectedAcademicYear === "all"
+          ? getCurrentAcademicYear()
+          : selectedAcademicYear,
+      niveau: status?.niveau || student.niveau,
     });
   };
 
@@ -198,28 +212,31 @@ fetchLastAcademicYear(); // Add this line
     setIsSituationModalVisible(true);
     form.setFieldsValue({
       nouvelleSituation: "passe",
-      anneeAcademique: selectedAcademicYear === "all" ? getCurrentAcademicYear() : selectedAcademicYear,
-      niveau: selectedNiveau === "all" ? "" : selectedNiveau
+      anneeAcademique:
+        selectedAcademicYear === "all"
+          ? getCurrentAcademicYear()
+          : selectedAcademicYear,
+      niveau: selectedNiveau === "all" ? "" : selectedNiveau,
     });
   };
 
   const handleUpdateSituation = async () => {
     try {
       const values = await form.validateFields();
-      const studentIds = selectedStudents.map(student => student._id);
-      
+      const studentIds = selectedStudents.map((student) => student._id);
+
       if (studentIds.length === 1) {
         await updateStudentSituation(studentIds[0], values);
       } else {
         await batchUpdateStudentSituation(studentIds, values);
       }
-      
+
       message.success(
         studentIds.length === 1
           ? "Student situation updated successfully"
           : `${studentIds.length} student situations updated successfully`
       );
-      
+
       setIsSituationModalVisible(false);
       setSelectedStudents([]);
       setSelectedRowKeys([]);
@@ -400,17 +417,19 @@ fetchLastAcademicYear(); // Add this line
                 prefix={<SearchOutlined />}
                 style={{ width: 250 }}
               />
-             <Select
-  style={{ width: 180 }}
-  placeholder="Academic year"
-  value={selectedAcademicYear}
-  onChange={setSelectedAcademicYear}
->
-  <Option value="all">All Years</Option>
-  {availableYears.map(year => (
-    <Option key={year} value={year}>{year}</Option>
-  ))}
-</Select>
+              <Select
+                style={{ width: 180 }}
+                placeholder="Academic year"
+                value={selectedAcademicYear}
+                onChange={setSelectedAcademicYear}
+              >
+                <Option value="all">All Years</Option>
+                {availableYears.map((year) => (
+                  <Option key={year} value={year}>
+                    {year}
+                  </Option>
+                ))}
+              </Select>
               <Select
                 style={{ width: 120 }}
                 placeholder="Level"
@@ -418,8 +437,10 @@ fetchLastAcademicYear(); // Add this line
                 onChange={setSelectedNiveau}
               >
                 <Option value="all">All Levels</Option>
-                {availableNiveaux.map(niveau => (
-                  <Option key={niveau} value={niveau}>Level {niveau}</Option>
+                {availableNiveaux.map((niveau) => (
+                  <Option key={niveau} value={niveau}>
+                    Level {niveau}
+                  </Option>
                 ))}
               </Select>
             </Space>
@@ -438,13 +459,13 @@ fetchLastAcademicYear(); // Add this line
                   <Button type="primary" onClick={showModal}>
                     + Add Student
                   </Button>
-                  <Button 
-  type="primary" 
-  onClick={handleNotifyDiplomeStudents}
-  loading={loading}
->
-  Notify Old Students
-</Button>
+                  <Button
+                    type="primary"
+                    onClick={handleNotifyDiplomeStudents}
+                    loading={loading}
+                  >
+                    Notify Old Students
+                  </Button>
                   <Upload
                     accept=".xlsx, .xls, .csv"
                     disabled={importing}

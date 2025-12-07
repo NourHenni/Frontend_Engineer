@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import FormModal from "../../../components/modals/FormModal";
-import { addPfa, fetchMyPfas, fetchPfas } from "../../../services/pfaServices";
+import { addPfa } from "../../../services/pfaServices";
 import { message, Input, Tag } from "antd"; // Importer Input et Tag d'Ant Design
 import axios from "axios";
 
@@ -78,7 +78,7 @@ function AddPfa({ isModalOpen, setIsModalOpen, title, refreshMyData }) {
       const response = await addPfa(newPfa);
       console.log("response", response);
 
-      if (response && response.message) {
+      if (response.message) {
         message.success(response.message);
         refreshMyData();
         setIsModalOpen(false);
