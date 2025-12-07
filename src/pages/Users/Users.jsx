@@ -97,7 +97,7 @@ function Users() {
             message.error(
               "Please enter a valid academic year in YYYY-YYYY format"
             );
-            return Promise.reject();
+            throw new Error("Invalid academic year format");
           }
 
           // Extract years
@@ -108,7 +108,9 @@ function Users() {
             message.error(
               "Academic year must be exactly one year (e.g., 2025-2026)"
             );
-            return Promise.reject();
+            throw new Error(
+              "Academic year must be consecutive (e.g., 2025-2026)"
+            );
           }
 
           // Check for exact match only
@@ -122,7 +124,7 @@ function Users() {
             await fetchInitialData();
           } catch (error) {
             message.error(`Error: ${error.message}`);
-            return Promise.reject();
+            throw error; // ⬅️ Relance l'erreur correctement
           } finally {
             setLoading(false);
           }
